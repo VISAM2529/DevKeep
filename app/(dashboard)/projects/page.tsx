@@ -72,17 +72,17 @@ export default function ProjectsPage() {
     );
 
     return (
-        <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-white">Projects</h1>
-                    <p className="text-muted-foreground max-w-md text-sm">
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">Projects</h1>
+                    <p className="text-muted-foreground max-w-md text-xs md:text-sm">
                         Manage your active development environments and secure their access protocols.
                     </p>
                 </div>
-                <Link href="/projects/new">
-                    <Button className="h-10 px-4 gap-2 text-sm font-medium">
+                <Link href="/projects/new" className="w-full md:w-auto">
+                    <Button className="w-full h-10 px-4 gap-2 text-sm font-medium">
                         <Plus className="h-4 w-4" />
                         Initialize Workspace
                     </Button>
@@ -94,7 +94,7 @@ export default function ProjectsPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                     placeholder="Search by name or tech stack..."
-                    className="pl-10"
+                    className="pl-10 bg-secondary/20 border-white/5"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />

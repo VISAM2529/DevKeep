@@ -136,17 +136,17 @@ export function AttendanceAnalytics({ communityId }: AttendanceAnalyticsProps) {
 
             {/* Member Breakdown */}
             <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="text-lg font-semibold">Member Breakdown</CardTitle>
-                            <CardDescription>Individual attendance statistics</CardDescription>
+                <CardHeader className="pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="text-base md:text-lg font-semibold tracking-tight text-foreground">Member Breakdown</CardTitle>
+                            <CardDescription className="text-[10px] md:text-sm">Individual attendance statistics</CardDescription>
                         </div>
                         <Tabs value={period} onValueChange={handlePeriodChange} className="w-full md:w-auto">
-                            <TabsList className="grid grid-cols-3 w-full">
-                                <TabsTrigger value="daily" className="text-xs">Daily</TabsTrigger>
-                                <TabsTrigger value="weekly" className="text-xs">Weekly</TabsTrigger>
-                                <TabsTrigger value="monthly" className="text-xs">Monthly</TabsTrigger>
+                            <TabsList className="grid grid-cols-3 w-full md:w-[300px] h-9 md:h-10 bg-secondary/50 p-1">
+                                <TabsTrigger value="daily" className="text-[10px] md:text-xs font-medium">Daily</TabsTrigger>
+                                <TabsTrigger value="weekly" className="text-[10px] md:text-xs font-medium">Weekly</TabsTrigger>
+                                <TabsTrigger value="monthly" className="text-[10px] md:text-xs font-medium">Monthly</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>

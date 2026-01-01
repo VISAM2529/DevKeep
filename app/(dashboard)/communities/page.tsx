@@ -90,18 +90,18 @@ export default function CommunitiesPage() {
     );
 
     return (
-        <div className="h-full flex flex-col p-8 space-y-8">
+        <div className="h-full flex flex-col p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Communities</h1>
-                    <p className="text-muted-foreground mt-1">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Communities</h1>
+                    <p className="text-muted-foreground mt-1 text-sm md:text-base">
                         Connect, collaborate, and chat with your teams.
                     </p>
                 </div>
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="gap-2">
+                        <Button className="gap-2 w-full md:w-auto">
                             <Plus className="h-4 w-4" />
                             New Community
                         </Button>

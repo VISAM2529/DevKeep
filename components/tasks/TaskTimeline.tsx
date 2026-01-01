@@ -73,12 +73,12 @@ export function TaskTimeline({ tasks }: TaskTimelineProps) {
     };
 
     return (
-        <Card className="p-6">
-            <ScrollArea className="w-full">
-                <div className="min-w-[1200px]">
+        <Card className="p-3 md:p-6 overflow-hidden">
+            <ScrollArea className="w-full no-scrollbar">
+                <div className="min-w-[800px] md:min-w-[1200px] relative">
                     {/* Header with months */}
                     <div className="flex border-b border-border/40 pb-2 mb-4">
-                        <div className="w-48 font-semibold text-sm">Task</div>
+                        <div className="w-32 md:w-48 font-semibold text-xs md:text-sm">Task</div>
                         <div className="flex-1 relative">
                             {Array.from(new Set(days.map(d => format(d, 'MMM yyyy')))).map((month, i) => {
                                 const monthDays = days.filter(d => format(d, 'MMM yyyy') === month);
@@ -106,10 +106,10 @@ export function TaskTimeline({ tasks }: TaskTimelineProps) {
 
                             return (
                                 <div key={task._id} className="flex items-center group">
-                                    <div className="w-48 pr-4">
-                                        <div className="text-sm font-medium truncate">{task.title}</div>
+                                    <div className="w-32 md:w-48 pr-4">
+                                        <div className="text-xs md:text-sm font-medium truncate">{task.title}</div>
                                         <div className="flex gap-1 mt-1 flex-wrap">
-                                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                            <Badge variant="outline" className="text-[9px] md:text-[10px] px-1 py-0">
                                                 {task.status}
                                             </Badge>
                                             <Badge
@@ -162,12 +162,13 @@ export function TaskTimeline({ tasks }: TaskTimelineProps) {
 
                     {/* Today indicator */}
                     <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-primary/50 pointer-events-none"
+                        className="absolute top-0 bottom-0 w-0.5 bg-primary/50 pointer-events-none z-10"
                         style={{
-                            left: `${48 * 4 + (differenceInDays(new Date(), start) / totalDays) * 100}%`
+                            left: `${(timelineData.start === null ? 0 : (differenceInDays(new Date(), start) / totalDays)) * 100}%`,
+                            marginLeft: 'calc(8rem + 1rem)' // Matching the w-32 (8rem) + pr-4 (1rem)
                         }}
                     >
-                        <div className="absolute -top-6 -left-8 text-xs font-medium text-primary">
+                        <div className="absolute -top-6 -left-8 text-[10px] md:text-xs font-medium text-primary bg-background px-1 rounded">
                             Today
                         </div>
                     </div>

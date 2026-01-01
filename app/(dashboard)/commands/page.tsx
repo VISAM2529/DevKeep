@@ -111,12 +111,12 @@ export default function CommandsPage() {
     });
 
     return (
-        <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-white">Snippets</h1>
-                    <p className="text-muted-foreground max-w-md text-sm">
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">Snippets</h1>
+                    <p className="text-muted-foreground max-w-md text-xs md:text-sm">
                         Store and deploy your most frequent terminal logic and shell scripts.
                     </p>
                 </div>
@@ -126,7 +126,7 @@ export default function CommandsPage() {
                     if (!open) setSelectedCommand(null);
                 }}>
                     <DialogTrigger asChild>
-                        <Button className="h-10 px-4 gap-2 text-sm font-medium">
+                        <Button className="w-full md:w-auto h-10 px-4 gap-2 text-sm font-medium">
                             <Plus className="h-4 w-4" />
                             Initialize Snippet
                         </Button>
@@ -152,23 +152,23 @@ export default function CommandsPage() {
             {/* Utility Bar */}
             <Tabs defaultValue="All" className="w-full" onValueChange={setActiveCategory}>
                 <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
-                    <TabsList className="h-10 p-1">
+                    <TabsList className="h-auto p-1 flex-wrap justify-start">
                         {categories.map((cat) => (
                             <TabsTrigger
                                 key={cat}
                                 value={cat}
-                                className="px-3"
+                                className="px-3 h-8 text-xs"
                             >
                                 {cat}
                             </TabsTrigger>
                         ))}
                     </TabsList>
 
-                    <div className="relative group max-w-xs w-full">
+                    <div className="relative group max-w-md w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                         <Input
-                            placeholder="Filter by title, code, or tag..."
-                            className="pl-9 h-10"
+                            placeholder="Filter snippets..."
+                            className="pl-9 h-10 bg-secondary/20 border-white/5"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />

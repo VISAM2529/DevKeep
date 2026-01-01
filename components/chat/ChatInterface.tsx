@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, Check, CheckCheck } from "lucide-react";
+import { Send, Loader2, Check, CheckCheck, Maximize2, Minimize2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
@@ -36,6 +36,7 @@ export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
     const [newMessage, setNewMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const apiEndpoint = projectId
@@ -120,11 +121,22 @@ export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
     };
 
     return (
-        <div className="flex flex-col h-[600px] border border-border/40 rounded-xl bg-card overflow-hidden">
-            <div className="p-4 border-b border-border/40 bg-muted/20">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
+        <div className={`flex flex-col border border-border/40 rounded-xl bg-card overflow-hidden transition-all duration-300 ${isFullscreen
+            ? "fixed inset-0 z-[100] rounded-none md:rounded-none h-screen w-screen"
+            : "h-[500px] md:h-[600px] relative"
+            }`}>
+            <div className="p-3 md:p-4 border-b border-border/40 bg-muted/20 flex items-center justify-between">
+                <h3 className="font-semibold text-xs md:text-sm flex items-center gap-2 text-foreground">
                     {projectId ? "Project Discussion" : "Community Chat"}
                 </h3>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                >
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </Button>
             </div>
 
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>
@@ -158,7 +170,7 @@ export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
                                         </AvatarFallback>
                                     </Avatar>
                                     <div
-                                        className={`flex flex-col max-w-[80%] ${isMe ? "items-end" : "items-start"
+                                        className={`flex flex-col max-w-[85%] md:max-w-[80%] ${isMe ? "items-end" : "items-start"
                                             }`}
                                     >
                                         <div className="flex items-center gap-2 mb-1">

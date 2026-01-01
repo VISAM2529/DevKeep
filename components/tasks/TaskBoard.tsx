@@ -108,16 +108,16 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
     if (isLoading) return <div>Loading board...</div>;
 
     return (
-        <div className="h-full flex flex-col space-y-4">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-medium">Task Management</h3>
-                    <div className="flex gap-1 bg-secondary/50 p-1 rounded-lg">
+        <div className="h-full flex flex-col space-y-4 md:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4">
+                    <h3 className="text-base md:text-lg font-semibold tracking-tight text-foreground">Task Management</h3>
+                    <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg w-fit">
                         <Button
                             size="sm"
                             variant={viewMode === "board" ? "default" : "ghost"}
                             onClick={() => setViewMode("board")}
-                            className="h-7 px-3 gap-1.5"
+                            className="h-8 md:h-7 px-3 gap-1.5 text-xs font-medium transition-all"
                         >
                             <LayoutGrid className="h-3.5 w-3.5" />
                             Board
@@ -126,14 +126,18 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
                             size="sm"
                             variant={viewMode === "timeline" ? "default" : "ghost"}
                             onClick={() => setViewMode("timeline")}
-                            className="h-7 px-3 gap-1.5"
+                            className="h-8 md:h-7 px-3 gap-1.5 text-xs font-medium transition-all"
                         >
                             <BarChart3 className="h-3.5 w-3.5" />
                             Timeline
                         </Button>
                     </div>
                 </div>
-                <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
+                <Button
+                    size="sm"
+                    onClick={() => setIsCreateOpen(true)}
+                    className="gap-2 h-9 md:h-8 w-full sm:w-auto font-medium"
+                >
                     <Plus className="h-4 w-4" />
                     New Task
                 </Button>
@@ -141,9 +145,9 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
 
             {viewMode === "board" ? (
                 <DragDropContext onDragEnd={onDragEnd}>
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[500px]">
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 min-h-[500px]">
                         {columns.map((col) => (
-                            <div key={col.id} className={`flex flex-col rounded-xl border border-border/40 ${col.color} p-4`}>
+                            <div key={col.id} className={`flex flex-col rounded-xl border border-border/40 ${col.color} p-3 md:p-4`}>
                                 <div className="flex items-center justify-between mb-4">
                                     <h4 className="font-semibold text-sm">{col.title}</h4>
                                     <Badge variant="secondary" className="text-xs">

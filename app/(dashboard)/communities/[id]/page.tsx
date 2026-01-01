@@ -64,29 +64,32 @@ export default function CommunityDetailPage() {
     }
 
     return (
-        <div className="h-full flex flex-col space-y-6 p-8">
+        <div className="h-full flex flex-col space-y-6 p-4 md:p-8">
             {/* Header */}
             <div className="flex flex-col gap-4">
                 <Button
                     variant="ghost"
-                    className="w-fit -ml-2 text-muted-foreground hover:text-foreground"
+                    className="w-fit -ml-2 text-muted-foreground hover:text-foreground h-9 text-xs md:text-sm"
                     onClick={() => router.push("/communities")}
                 >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Communities
                 </Button>
 
-                <div className="flex items-start justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <h1 className="text-xl md:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
                             {community.name}
-                            <Badge variant="secondary" className="text-sm font-normal">
+                            <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] md:text-sm font-normal py-0 md:py-1">
                                 {community.members.length} Members
                             </Badge>
                         </h1>
-                        <p className="text-muted-foreground mt-2 max-w-2xl">
+                        <p className="text-muted-foreground max-w-2xl text-[11px] md:text-sm leading-relaxed">
                             {community.description}
                         </p>
+                        <Badge variant="secondary" className="sm:hidden text-[10px] font-normal py-0">
+                            {community.members.length} Members
+                        </Badge>
                     </div>
                 </div>
             </div>
@@ -95,18 +98,18 @@ export default function CommunityDetailPage() {
 
             {/* Content Tabs */}
             <Tabs defaultValue="projects" className="flex-1 flex flex-col space-y-6">
-                <TabsList className="w-fit bg-secondary/20">
-                    <TabsTrigger value="projects">Projects</TabsTrigger>
-                    <TabsTrigger value="chat" className="gap-2">
+                <TabsList className="h-auto p-1 flex overflow-x-auto no-scrollbar justify-start bg-secondary/20 w-fit max-w-full">
+                    <TabsTrigger value="projects" className="py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">Projects</TabsTrigger>
+                    <TabsTrigger value="chat" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
                         Discussion
                         {community.unreadCount > 0 && (
-                            <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full">
+                            <Badge variant="destructive" className="h-4 w-4 p-0 flex items-center justify-center text-[8px] md:text-[10px] rounded-full">
                                 {community.unreadCount}
                             </Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger value="members">Members</TabsTrigger>
-                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                    <TabsTrigger value="members" className="py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">Members</TabsTrigger>
+                    <TabsTrigger value="attendance" className="py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">Attendance</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="projects" className="space-y-6 outline-none">
@@ -133,7 +136,7 @@ export default function CommunityDetailPage() {
                     )}
                 </TabsContent>
 
-                <TabsContent value="chat" className="outline-none h-full">
+                <TabsContent value="chat" className="outline-none h-full min-h-[550px] md:min-h-0">
                     <ChatInterface communityId={community._id} />
                 </TabsContent>
 

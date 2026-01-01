@@ -104,12 +104,12 @@ export default function CredentialsPage() {
     );
 
     return (
-        <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Identity Vault</h1>
-                    <p className="text-muted-foreground max-w-md text-sm">
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Identity Vault</h1>
+                    <p className="text-muted-foreground max-w-md text-xs md:text-sm">
                         Manage your sensitive environment variables and platform access keys with AES-256 security.
                     </p>
                 </div>
@@ -119,7 +119,7 @@ export default function CredentialsPage() {
                     if (!open) setSelectedCredential(null);
                 }}>
                     <DialogTrigger asChild>
-                        <Button className="h-10 px-4 gap-2 text-sm font-medium">
+                        <Button className="w-full md:w-auto h-10 px-4 gap-2 text-sm font-medium">
                             <Plus className="h-4 w-4" />
                             Provision Secret
                         </Button>
@@ -148,12 +148,12 @@ export default function CredentialsPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search workspace identifiers..."
-                        className="pl-10"
+                        className="pl-10 bg-secondary/20 border-white/5"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button variant="outline" className="h-10 px-4 gap-2 text-sm font-medium">
+                <Button variant="outline" className="h-10 px-4 gap-2 text-sm font-medium w-full md:w-auto">
                     <Filter className="h-4 w-4" />
                     Filters
                     <ChevronDown className="h-4 w-4 ml-2" />

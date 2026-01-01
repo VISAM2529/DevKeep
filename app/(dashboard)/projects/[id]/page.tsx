@@ -135,73 +135,73 @@ export default function ProjectDetailPage() {
     if (!project) return null;
 
     return (
-        <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
                 <Link
                     href="/projects"
-                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors"
+                    className="inline-flex items-center gap-2 text-xs md:text-sm text-muted-foreground hover:text-white transition-colors"
                 >
                     <ChevronLeft className="h-4 w-4" />
                     Back to Projects
                 </Link>
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-6">
-                        <div className="relative h-20 w-20 rounded-2xl overflow-hidden border border-white/10 bg-secondary/20">
+                    <div className="flex items-center gap-4 md:gap-6">
+                        <div className="relative h-16 w-16 md:h-20 md:w-20 rounded-xl md:rounded-2xl overflow-hidden border border-white/10 bg-secondary/20 shrink-0">
                             {project.logo ? (
                                 <Image src={project.logo} alt={project.name} fill className="object-cover" />
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center">
-                                    <Code2 className="h-8 w-8 text-primary" />
+                                    <Code2 className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                                 </div>
                             )}
                         </div>
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-3">
-                                <h1 className="text-3xl font-bold tracking-tight text-white">{project.name}</h1>
-                                <Badge variant="outline" className={project.status === 'Active' ? 'text-green-500 border-green-500/20 bg-green-500/10' : ''}>
+                        <div className="space-y-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                                <h1 className="text-xl md:text-3xl font-bold tracking-tight text-white truncate">{project.name}</h1>
+                                <Badge variant="outline" className={`text-[10px] md:text-xs ${project.status === 'Active' ? 'text-green-500 border-green-500/20 bg-green-500/10' : ''}`}>
                                     {project.status}
                                 </Badge>
                             </div>
-                            <div className="flex items-center gap-4 text-muted-foreground">
-                                <span className="text-xs font-medium flex items-center gap-1.5">
-                                    <Globe className="h-3.5 w-3.5" />
-                                    {project.environment} Environment
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+                                <span className="text-[10px] md:text-xs font-medium flex items-center gap-1.5">
+                                    <Globe className="h-3 md:h-3.5 w-3 md:w-3.5" />
+                                    {project.environment}
                                 </span>
-                                <span className="text-xs font-medium flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5" />
-                                    Created {new Date(project.createdAt).toLocaleDateString()}
+                                <span className="text-[10px] md:text-xs font-medium flex items-center gap-1.5">
+                                    <Calendar className="h-3 md:h-3.5 w-3 md:w-3.5" />
+                                    {new Date(project.createdAt).toLocaleDateString()}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
                         {project.repositoryUrl && (
-                            <Link href={project.repositoryUrl} target="_blank">
-                                <Button variant="outline" className="h-10 gap-2">
-                                    <Github className="h-4 w-4" />
+                            <Link href={project.repositoryUrl} target="_blank" className="flex-1 md:flex-none">
+                                <Button variant="outline" className="h-9 md:h-10 gap-2 w-full text-xs">
+                                    <Github className="h-3.5 w-3.5" />
                                     Repo
                                 </Button>
                             </Link>
                         )}
                         {project.liveUrl && (
-                            <Link href={project.liveUrl} target="_blank">
-                                <Button variant="outline" className="h-10 gap-2">
-                                    <ExternalLink className="h-4 w-4" />
+                            <Link href={project.liveUrl} target="_blank" className="flex-1 md:flex-none">
+                                <Button variant="outline" className="h-9 md:h-10 gap-2 w-full text-xs">
+                                    <ExternalLink className="h-3.5 w-3.5" />
                                     Live
                                 </Button>
                             </Link>
                         )}
-                        <Button variant="ghost" size="icon" className="h-10 w-10">
-                            <Settings className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10">
+                            <Settings className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                             onClick={() => setIsShareModalOpen(true)}
-                            className="h-10 gap-2"
+                            className="flex-1 md:flex-none h-9 md:h-10 gap-2 text-xs"
                         >
-                            <Users className="h-4 w-4" />
+                            <Users className="h-3.5 w-3.5" />
                             Share
                         </Button>
                     </div>
@@ -209,60 +209,60 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* Overview Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Credentials</CardTitle>
-                        <Lock className="h-4 w-4 text-primary" />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+                <Card className="col-span-1">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
+                        <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Credentials</CardTitle>
+                        <Lock className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-white">{credentials.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Secured items</p>
+                    <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
+                        <div className="text-xl md:text-2xl font-bold text-white">{credentials.length}</div>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Secured items</p>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Commands</CardTitle>
-                        <Terminal className="h-4 w-4 text-purple-500" />
+                <Card className="col-span-1">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
+                        <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Commands</CardTitle>
+                        <Terminal className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-500" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-white">{commands.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Snippets stored</p>
+                    <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
+                        <div className="text-xl md:text-2xl font-bold text-white">{commands.length}</div>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Snippets stored</p>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Notes</CardTitle>
-                        <FileText className="h-4 w-4 text-blue-500" />
+                <Card className="col-span-2 md:col-span-1">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
+                        <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Notes</CardTitle>
+                        <FileText className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-500" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-white">{notes.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Docs created</p>
+                    <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
+                        <div className="text-xl md:text-2xl font-bold text-white">{notes.length}</div>
+                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Docs created</p>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Content Tabs */}
             <Tabs defaultValue="credentials" className="w-full" onValueChange={setActiveTab}>
-                <div className="flex items-center justify-between mb-6">
-                    <TabsList>
-                        <TabsTrigger value="credentials" className="gap-2">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <TabsList className="h-auto p-1 flex overflow-x-auto no-scrollbar justify-start bg-secondary/20 w-fit max-w-full">
+                        <TabsTrigger value="credentials" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
                             <Lock className="h-3.5 w-3.5" />
                             Credentials
                         </TabsTrigger>
-                        <TabsTrigger value="commands" className="gap-2">
+                        <TabsTrigger value="commands" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
                             <Terminal className="h-3.5 w-3.5" />
                             Commands
                         </TabsTrigger>
-                        <TabsTrigger value="notes" className="gap-2">
+                        <TabsTrigger value="notes" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
                             <FileText className="h-3.5 w-3.5" />
                             Notes
                         </TabsTrigger>
-                        <TabsTrigger value="tasks" className="gap-2">
+                        <TabsTrigger value="tasks" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
                             <LayoutList className="h-3.5 w-3.5" />
                             Tasks
                         </TabsTrigger>
-                        <TabsTrigger value="chat" className="gap-2">
+                        <TabsTrigger value="chat" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
                             <Users className="h-3.5 w-3.5" />
                             Discussion
                         </TabsTrigger>

@@ -105,13 +105,13 @@ export function AttendanceWidget({ communityId }: AttendanceWidgetProps) {
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-lg font-semibold">Attendance</CardTitle>
-                        <CardDescription>Track your work hours</CardDescription>
+            <CardHeader className="pb-4">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <CardTitle className="text-base md:text-lg font-semibold tracking-tight text-foreground">Attendance</CardTitle>
+                        <CardDescription className="text-[10px] md:text-sm">Track your work hours</CardDescription>
                     </div>
-                    <Badge variant={isActive ? "default" : "secondary"} className="gap-1.5">
+                    <Badge variant={isActive ? "default" : "secondary"} className="gap-1.5 h-6 md:h-7 text-[10px] md:text-xs px-2 md:px-3">
                         <Clock className="h-3 w-3" />
                         {isActive ? "Active" : "Inactive"}
                     </Badge>
