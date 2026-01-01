@@ -2,32 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
     <url>
-      <loc>https://devkeep.com</loc>
-      <lastmod>2026-01-01T13:59:16.977Z</lastmod>
+      <loc>https://dev-keep.vercel.app</loc>
+      <lastmod>2026-01-01T14:06:08.085Z</lastmod>
       <changefreq>daily</changefreq>
       <priority>1.0</priority>
     </url>
     <url>
-      <loc>https://devkeep.com/login</loc>
-      <lastmod>2026-01-01T13:59:16.978Z</lastmod>
+      <loc>https://dev-keep.vercel.app/login</loc>
+      <lastmod>2026-01-01T14:06:08.086Z</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
     </url>
     <url>
-      <loc>https://devkeep.com/signup</loc>
-      <lastmod>2026-01-01T13:59:16.978Z</lastmod>
+      <loc>https://dev-keep.vercel.app/signup</loc>
+      <lastmod>2026-01-01T14:06:08.086Z</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
     </url>
     <url>
-      <loc>https://devkeep.com/communities</loc>
-      <lastmod>2026-01-01T13:59:16.978Z</lastmod>
+      <loc>https://dev-keep.vercel.app/communities</loc>
+      <lastmod>2026-01-01T14:06:08.086Z</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
     </url>
     <url>
-      <loc>https://devkeep.com/projects</loc>
-      <lastmod>2026-01-01T13:59:16.978Z</lastmod>
+      <loc>https://dev-keep.vercel.app/projects</loc>
+      <lastmod>2026-01-01T14:06:08.086Z</lastmod>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
     </url>
