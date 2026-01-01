@@ -142,11 +142,11 @@ export function AttendanceAnalytics({ communityId }: AttendanceAnalyticsProps) {
                             <CardTitle className="text-lg font-semibold">Member Breakdown</CardTitle>
                             <CardDescription>Individual attendance statistics</CardDescription>
                         </div>
-                        <Tabs value={period} onValueChange={handlePeriodChange}>
-                            <TabsList>
-                                <TabsTrigger value="daily">Daily</TabsTrigger>
-                                <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                        <Tabs value={period} onValueChange={handlePeriodChange} className="w-full md:w-auto">
+                            <TabsList className="grid grid-cols-3 w-full">
+                                <TabsTrigger value="daily" className="text-xs">Daily</TabsTrigger>
+                                <TabsTrigger value="weekly" className="text-xs">Weekly</TabsTrigger>
+                                <TabsTrigger value="monthly" className="text-xs">Monthly</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>
@@ -203,26 +203,26 @@ export function AttendanceAnalytics({ communityId }: AttendanceAnalyticsProps) {
                                             {/* Daily Records Table */}
                                             {member.records && member.records.length > 0 && (
                                                 <div className="mt-3 pt-3 border-t border-border/40">
-                                                    <div className="text-xs font-medium text-muted-foreground mb-2">
+                                                    <div className="text-[10px] md:text-xs font-medium text-muted-foreground mb-2 px-1">
                                                         Daily Attendance Records
                                                     </div>
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-1.5 md:space-y-2">
                                                         {member.records.map((record: any, idx: number) => {
                                                             const status = getAttendanceStatus(record.hours);
                                                             return (
                                                                 <div
                                                                     key={idx}
-                                                                    className="flex items-center justify-between p-2 rounded bg-secondary/20 border border-border/20"
+                                                                    className="flex items-center justify-between p-1.5 md:p-2 rounded bg-secondary/20 border border-border/10"
                                                                 >
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="text-xs font-medium min-w-[80px]">
+                                                                    <div className="flex items-center gap-2 md:gap-3">
+                                                                        <div className="text-[10px] md:text-xs font-medium min-w-[70px] md:min-w-[80px]">
                                                                             {record.date}
                                                                         </div>
-                                                                        <Badge variant="outline" className={`text-[10px] ${status.color}`}>
+                                                                        <Badge variant="outline" className={`text-[9px] md:text-[10px] px-1 md:px-2 ${status.color}`}>
                                                                             {status.label}
                                                                         </Badge>
                                                                     </div>
-                                                                    <div className="text-xs font-semibold text-primary">
+                                                                    <div className="text-[10px] md:text-xs font-semibold text-primary">
                                                                         {record.hours}h
                                                                     </div>
                                                                 </div>

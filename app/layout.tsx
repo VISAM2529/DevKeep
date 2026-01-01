@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://devkeep.com"), // Replace with your actual domain
+  metadataBase: new URL("https://dev-keep.vercel.app"), // Replace with your actual domain
   title: {
     default: "DevKeep - The Ultimate Developer Command Center",
     template: "%s | DevKeep"
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://devkeep.com",
+    url: "https://dev-keep.vercel.app",
     siteName: "DevKeep",
     title: "DevKeep - Secure Developer Workspace",
     description: "Manage your projects, team attendance, and secrets in one secure, high-performance workspace.",

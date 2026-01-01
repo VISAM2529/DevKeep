@@ -31,9 +31,17 @@ const navigation = [
     { name: "Documentation", href: "/notes", icon: FileText },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+    onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
     const pathname = usePathname();
     const { data: session } = useSession();
+
+    const handleLinkClick = () => {
+        if (onClose) onClose();
+    };
 
     return (
         <div className="flex h-full w-[280px] flex-col border-r border-[#1F1F1F] bg-[#0A0A0A] text-[#EDEDED]">
@@ -65,6 +73,7 @@ export function Sidebar() {
                         <Link
                             key={item.name}
                             href={item.href}
+                            onClick={handleLinkClick}
                             className={cn(
                                 "group flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                                 isActive
@@ -88,7 +97,7 @@ export function Sidebar() {
             {/* Bottom Section */}
             <div className="p-4 mt-auto">
                 <div className="rounded-2xl bg-[#131313] border border-white/5 p-1">
-                    <Link href="/settings">
+                    <Link href="/settings" onClick={handleLinkClick}>
                         <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
                             <Avatar className="h-9 w-9 border border-white/10">
                                 <AvatarImage src={session?.user?.image || ""} />
@@ -110,14 +119,17 @@ export function Sidebar() {
                     <div className="h-px bg-white/5 my-1 mx-2" />
 
                     <div className="grid grid-cols-2 gap-1 px-1 pb-1">
-                        <Link href="/settings" className="w-full">
+                        <Link href="/settings" className="w-full" onClick={handleLinkClick}>
                             <div className="flex items-center justify-center h-9 w-full rounded-lg text-[#666] hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
                                 <Settings className="h-4 w-4" />
                             </div>
                         </Link>
                         <div
                             className="flex items-center justify-center h-9 w-full rounded-lg text-[#666] hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                            onClick={() => signOut({ callbackUrl: "/" })}
+                            onClick={() => {
+                                handleLinkClick();
+                                signOut({ callbackUrl: "/" });
+                            }}
                         >
                             <LogOut className="h-4 w-4" />
                         </div>

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const baseUrl = 'https://devkeep.com'; // Replace with your domain
+const baseUrl = 'https://dev-keep.vercel.app'; // Replace with your domain
 
 const pages = [
     '',

@@ -134,7 +134,7 @@ export function AttendanceWidget({ communityId }: AttendanceWidgetProps) {
                 )}
 
                 <Button
-                    className="w-full gap-2"
+                    className="w-full gap-2 h-11"
                     variant={isActive ? "destructive" : "default"}
                     onClick={handleClockAction}
                     disabled={processing}

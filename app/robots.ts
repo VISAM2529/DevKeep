@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/api/', '/dashboard/'], // Disallow crawling of private areas and APIs
         },
-        sitemap: 'https://devkeep.com/sitemap.xml',
+        sitemap: 'https://dev-keep.vercel.app/sitemap.xml',
     }
 }
