@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
+//sample
 export const metadata: Metadata = {
   title: "DevKeep - Secure Developer Workspace",
   description: "Manage your project credentials, commands, and notes securely in one place",
