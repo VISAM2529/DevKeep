@@ -74,39 +74,39 @@ export function MyAttendanceHistory({ communityId }: MyAttendanceHistoryProps) {
 
     return (
         <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-lg font-semibold">My Attendance History</CardTitle>
-                        <CardDescription>View your work hours and attendance records</CardDescription>
+            <CardHeader className="pb-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <CardTitle className="text-base md:text-lg font-semibold tracking-tight text-foreground">My Attendance History</CardTitle>
+                        <CardDescription className="text-[10px] md:text-sm">View your work hours and attendance records</CardDescription>
                     </div>
-                    <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
-                        <TabsList>
-                            <TabsTrigger value="daily">Daily</TabsTrigger>
-                            <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                    <Tabs value={period} onValueChange={(v) => setPeriod(v as any)} className="w-full md:w-auto">
+                        <TabsList className="grid grid-cols-3 w-full md:w-[300px] h-9 md:h-10 bg-secondary/50 p-1">
+                            <TabsTrigger value="daily" className="text-[10px] md:text-xs font-medium">Daily</TabsTrigger>
+                            <TabsTrigger value="weekly" className="text-[10px] md:text-xs font-medium">Weekly</TabsTrigger>
+                            <TabsTrigger value="monthly" className="text-[10px] md:text-xs font-medium">Monthly</TabsTrigger>
                         </TabsList>
                     </Tabs>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
                 {/* Summary */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="p-3 rounded-lg bg-secondary/20 border border-border/20">
-                        <div className="text-xs text-muted-foreground mb-1">Total Hours</div>
-                        <div className="text-lg font-bold text-primary">{totalHours.toFixed(1)}h</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-lg bg-secondary/30 border border-border/20">
+                        <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Total Hours</div>
+                        <div className="text-xl font-bold text-primary">{totalHours.toFixed(1)}h</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                        <div className="text-xs text-muted-foreground mb-1">Full Days</div>
-                        <div className="text-lg font-bold text-green-600">{fullDays}</div>
+                    <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                        <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Full Days</div>
+                        <div className="text-xl font-bold text-green-500">{fullDays}</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                        <div className="text-xs text-muted-foreground mb-1">Half Days</div>
-                        <div className="text-lg font-bold text-yellow-600">{halfDays}</div>
+                    <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                        <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Half Days</div>
+                        <div className="text-xl font-bold text-yellow-500">{halfDays}</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                        <div className="text-xs text-muted-foreground mb-1">Absent</div>
-                        <div className="text-lg font-bold text-red-600">{absentDays}</div>
+                    <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                        <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Absent</div>
+                        <div className="text-xl font-bold text-red-500">{absentDays}</div>
                     </div>
                 </div>
 
@@ -119,25 +119,25 @@ export function MyAttendanceHistory({ communityId }: MyAttendanceHistoryProps) {
                                 return (
                                     <div
                                         key={idx}
-                                        className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border/20 hover:border-primary/50 transition-all"
+                                        className="flex items-center justify-between p-2.5 md:p-3 rounded-lg bg-secondary/20 border border-border/20 hover:border-primary/50 transition-all"
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                        <div className="flex items-center gap-2 md:gap-3">
+                                            <Calendar className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
                                             <div>
-                                                <div className="text-sm font-medium">{record.date}</div>
+                                                <div className="text-[11px] md:text-sm font-medium">{record.date}</div>
                                                 {record.clockIn && record.clockOut && (
-                                                    <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                                        <Clock className="h-3 w-3" />
+                                                    <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                        <Clock className="h-2.5 w-2.5" />
                                                         {format(new Date(record.clockIn), "h:mm a")} - {format(new Date(record.clockOut), "h:mm a")}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className={`text-[10px] ${status.color}`}>
+                                            <Badge variant="outline" className={`text-[9px] md:text-[10px] px-1.5 py-0 ${status.color}`}>
                                                 {status.label}
                                             </Badge>
-                                            <div className="text-sm font-bold text-primary min-w-[50px] text-right">
+                                            <div className="text-xs md:text-sm font-bold text-primary min-w-[40px] md:min-w-[50px] text-right">
                                                 {record.hours}h
                                             </div>
                                         </div>
