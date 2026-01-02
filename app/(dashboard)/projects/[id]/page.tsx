@@ -283,6 +283,16 @@ export default function ProjectDetailPage() {
                                     if (isMeeting) {
                                         setIsMeeting(false);
                                         setActiveMeetingTab('none');
+                                        try {
+                                            fetch("/api/meeting/end", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ projectId: params.id }),
+                                            });
+                                            setProject((prev: any) => prev ? ({ ...prev, isMeetingActive: false }) : null);
+                                        } catch (err) {
+                                            console.error("Failed to end meeting", err);
+                                        }
                                     } else {
                                         if (project?.isMeetingActive) {
                                             setIsMeeting(true);
@@ -340,7 +350,7 @@ export default function ProjectDetailPage() {
                                         className="h-full"
                                     />
                                 ) : (
-                                    <MeetingNotesPanel projectId={params.id as string} />
+                                    <ChatInterface projectId={params.id as string} meetingId={project?.activeMeetingId} className="h-full border-0 rounded-none" />
                                 )}
                             </div>
                         )}

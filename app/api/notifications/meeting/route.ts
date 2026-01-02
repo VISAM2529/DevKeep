@@ -6,6 +6,7 @@ import Notification from "@/models/Notification";
 import Project from "@/models/Project";
 import Community from "@/models/Community";
 import User from "@/models/User";
+import mongoose from "mongoose";
 
 export async function POST(req: NextRequest) {
     try {
@@ -60,8 +61,12 @@ export async function POST(req: NextRequest) {
             link = `/projects/${projectId}?join=true`;
             contextId = { projectId };
 
-            // Set meeting active
-            await Project.findByIdAndUpdate(projectId, { isMeetingActive: true });
+            // Set meeting active and generate ID
+            const meetingId = new mongoose.Types.ObjectId();
+            await Project.findByIdAndUpdate(projectId, {
+                isMeetingActive: true,
+                activeMeetingId: meetingId.toString()
+            });
         }
         else if (communityId) {
             const community = await Community.findById(communityId).populate("members.userId");
@@ -82,8 +87,12 @@ export async function POST(req: NextRequest) {
             link = `/communities/${communityId}?join=true`;
             contextId = { communityId };
 
-            // Set meeting active
-            await Community.findByIdAndUpdate(communityId, { isMeetingActive: true });
+            // Set meeting active and generate ID
+            const meetingId = new mongoose.Types.ObjectId();
+            await Community.findByIdAndUpdate(communityId, {
+                isMeetingActive: true,
+                activeMeetingId: meetingId.toString()
+            });
         }
 
         if (recipients.length === 0) {

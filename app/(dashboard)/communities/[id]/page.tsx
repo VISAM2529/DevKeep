@@ -126,6 +126,16 @@ export default function CommunityDetailPage() {
                             if (isMeeting) {
                                 setIsMeeting(false);
                                 setActiveMeetingTab('none');
+                                try {
+                                    fetch("/api/meeting/end", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ communityId: params.id }),
+                                    });
+                                    setCommunity((prev: any) => prev ? ({ ...prev, isMeetingActive: false }) : null);
+                                } catch (err) {
+                                    console.error("Failed to end meeting", err);
+                                }
                             } else {
                                 if (community?.isMeetingActive) {
                                     setIsMeeting(true);
@@ -171,6 +181,7 @@ export default function CommunityDetailPage() {
                             {activeMeetingTab === 'chat' ? (
                                 <ChatInterface
                                     communityId={params.id as string}
+                                    meetingId={community?.activeMeetingId}
                                     className="h-full"
                                 />
                             ) : (

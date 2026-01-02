@@ -9,6 +9,7 @@ export interface IMessage extends Document {
         userId: mongoose.Types.ObjectId;
         readAt: Date;
     }[];
+    meetingId?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -23,6 +24,10 @@ const MessageSchema = new Schema<IMessage>(
         projectId: {
             type: Schema.Types.ObjectId,
             ref: "Project",
+            index: true,
+        },
+        meetingId: {
+            type: String,
             index: true,
         },
         senderId: {

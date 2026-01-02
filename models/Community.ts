@@ -11,6 +11,7 @@ export interface ICommunity extends Document {
     }[];
     icon?: string;
     isMeetingActive: boolean;
+    activeMeetingId?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -46,6 +47,9 @@ const CommunitySchema = new Schema<ICommunity>(
         isMeetingActive: {
             type: Boolean,
             default: false,
+        },
+        activeMeetingId: {
+            type: String,
         },
     },
     {

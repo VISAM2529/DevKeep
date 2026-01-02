@@ -11,6 +11,7 @@ export interface IProject extends Document {
     environment: "Local" | "Staging" | "Production";
     status: "Active" | "Archived";
     isMeetingActive: boolean;
+    activeMeetingId?: string;
     logo?: string;
     banner?: string;
     sharedWith: {
@@ -70,6 +71,9 @@ const ProjectSchema = new Schema<IProject>(
         isMeetingActive: {
             type: Boolean,
             default: false,
+        },
+        activeMeetingId: {
+            type: String, // Stores the unique ID of the current meeting session
         },
         logo: {
             type: String,

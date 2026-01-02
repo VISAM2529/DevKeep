@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/mongodb";
 import Project from "@/models/Project";
 import Community from "@/models/Community";
+import Message from "@/models/Message";
 
 export async function POST(req: NextRequest) {
     try {
@@ -17,10 +18,25 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         if (projectId) {
-            await Project.findByIdAndUpdate(projectId, { isMeetingActive: false });
+            const project = await Project.findById(projectId);
+            if ((project as any)?.activeMeetingId) {
+                // Delete chat history for this meeting
+                await Message.deleteMany({ meetingId: (project as any).activeMeetingId });
+            }
+            await Project.findByIdAndUpdate(projectId, {
+                isMeetingActive: false,
+                $unset: { activeMeetingId: "" }
+            });
         }
         else if (communityId) {
-            await Community.findByIdAndUpdate(communityId, { isMeetingActive: false });
+            const community = await Community.findById(communityId);
+            if ((community as any)?.activeMeetingId) {
+                await Message.deleteMany({ meetingId: (community as any).activeMeetingId });
+            }
+            await Community.findByIdAndUpdate(communityId, {
+                isMeetingActive: false,
+                $unset: { activeMeetingId: "" }
+            });
         }
 
         return NextResponse.json({ success: true, message: "Meeting ended" });

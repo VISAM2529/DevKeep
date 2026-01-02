@@ -39,7 +39,18 @@ export async function GET(
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
-        const messages = await Message.find({ projectId: id })
+        const { searchParams } = new URL(req.url);
+        const meetingId = searchParams.get('meetingId');
+
+        const query: any = { projectId: id };
+        if (meetingId) {
+            query.meetingId = meetingId;
+        } else {
+            // Main chat only shows messages NOT in a meeting
+            query.meetingId = { $exists: false };
+        }
+
+        const messages = await Message.find(query)
             .populate("senderId", "name email image lastSeen")
             .populate("readBy.userId", "name")
             .sort({ createdAt: 1 })
@@ -78,6 +89,7 @@ export async function POST(
 
         const body = await req.json();
         const { content } = messageSchema.parse(body);
+        const { meetingId } = body;
 
         await connectDB();
 
@@ -103,7 +115,8 @@ export async function POST(
             projectId: id,
             senderId: session.user.id,
             content: encryptedContent,
-            readBy: [{ userId: session.user.id, readAt: new Date() }]
+            readBy: [{ userId: session.user.id, readAt: new Date() }],
+            meetingId: meetingId || undefined
         });
 
         // Populate sender info for immediate display

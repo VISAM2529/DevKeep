@@ -33,7 +33,17 @@ export async function GET(
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
-        const messages = await Message.find({ communityId: id })
+        const { searchParams } = new URL(req.url);
+        const meetingId = searchParams.get('meetingId');
+
+        const query: any = { communityId: id };
+        if (meetingId) {
+            query.meetingId = meetingId;
+        } else {
+            query.meetingId = { $exists: false };
+        }
+
+        const messages = await Message.find(query)
             .populate("senderId", "name email image")
             .populate("readBy.userId", "name")
             .sort({ createdAt: 1 })
@@ -67,7 +77,7 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { content } = await req.json();
+        const { content, meetingId } = await req.json();
         if (!content) {
             return NextResponse.json({ error: "Message content cannot be empty" }, { status: 400 });
         }
@@ -95,6 +105,7 @@ export async function POST(
             communityId: id,
             senderId: session.user.id,
             content: encryptedContent,
+            meetingId: meetingId || undefined
         });
 
         // Populate sender info for immediate return

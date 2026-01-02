@@ -29,12 +29,13 @@ interface Message {
 interface ChatInterfaceProps {
     communityId?: string;
     projectId?: string;
+    meetingId?: string; // Optional meeting ID for isolated chat
     className?: string; // Allow custom styling
 }
 
 import { useNotifications } from "@/components/providers/NotificationProvider";
 
-export function ChatInterface({ communityId, projectId, className }: ChatInterfaceProps) {
+export function ChatInterface({ communityId, projectId, meetingId, className }: ChatInterfaceProps) {
     const { data: session } = useSession();
     const { refresh } = useNotifications();
     const [messages, setMessages] = useState<Message[]>([]);
@@ -70,7 +71,11 @@ export function ChatInterface({ communityId, projectId, className }: ChatInterfa
 
     const fetchMessages = async () => {
         try {
-            const res = await fetch(apiEndpoint);
+            const url = meetingId
+                ? `${apiEndpoint}?meetingId=${meetingId}`
+                : apiEndpoint;
+
+            const res = await fetch(url);
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
@@ -95,7 +100,7 @@ export function ChatInterface({ communityId, projectId, className }: ChatInterfa
         // Polling every 5 seconds for new messages
         const interval = setInterval(fetchMessages, 5000);
         return () => clearInterval(interval);
-    }, [communityId, projectId]); // Depend on both
+    }, [communityId, projectId, meetingId]); // Depend on all
 
     useEffect(() => {
         scrollToBottom();
@@ -111,7 +116,7 @@ export function ChatInterface({ communityId, projectId, className }: ChatInterfa
             const res = await fetch(apiEndpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: newMessage }),
+                body: JSON.stringify({ content: newMessage, meetingId }),
             });
 
             if (res.ok) {
