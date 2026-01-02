@@ -22,6 +22,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface CredentialCardProps {
     credential: {
@@ -42,6 +43,7 @@ export function CredentialCard({ credential, onDelete, onEdit }: CredentialCardP
     const [isCopied, setIsCopied] = useState(false);
     const [decryptedPassword, setDecryptedPassword] = useState<string | null>(null);
     const [isLoadingPassword, setIsLoadingPassword] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const fetchPassword = async () => {
         if (decryptedPassword) return decryptedPassword;
@@ -125,13 +127,26 @@ export function CredentialCard({ credential, onDelete, onEdit }: CredentialCardP
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 className="text-destructive gap-2 cursor-pointer"
-                                onClick={() => onDelete?.(credential._id)}
+                                onClick={() => setShowDeleteModal(true)}
                             >
                                 <Trash2 className="h-4 w-4" /> Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+
+                <ConfirmModal
+                    isOpen={showDeleteModal}
+                    onClose={() => setShowDeleteModal(false)}
+                    onConfirm={() => {
+                        onDelete?.(credential._id);
+                        setShowDeleteModal(false);
+                    }}
+                    title="Remove Credential?"
+                    description={`You are about to delete the access keys for ${credential.platform} (${credential.username}). This will permanently remove this entry from your vault.`}
+                    confirmText="Delete Credential"
+                    variant="destructive"
+                />
             </CardHeader>
 
             <CardContent className="space-y-4">

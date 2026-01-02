@@ -43,10 +43,20 @@ export async function GET(
         let isCollaborator = false;
 
         if (!isOwner && credential.projectId) {
-            // Check project collaboration
+            // Check project collaboration or ownership
             const project = await Project.findOne({
                 _id: credential.projectId,
-                "sharedWith.email": session.user.email?.toLowerCase()
+                $or: [
+                    { userId: session.user.id },
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
+                ]
             });
             if (project) isCollaborator = true;
         }
@@ -103,7 +113,17 @@ export async function PUT(
         if (!isOwner && credential.projectId) {
             const project = await Project.findOne({
                 _id: credential.projectId,
-                "sharedWith.email": session.user.email?.toLowerCase()
+                $or: [
+                    { userId: session.user.id },
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
+                ]
             });
             if (project) isCollaborator = true;
         }
@@ -171,7 +191,17 @@ export async function DELETE(
         if (!isOwner && credential.projectId) {
             const project = await Project.findOne({
                 _id: credential.projectId,
-                "sharedWith.email": session.user.email?.toLowerCase()
+                $or: [
+                    { userId: session.user.id },
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
+                ]
             });
             if (project) isCollaborator = true;
         }

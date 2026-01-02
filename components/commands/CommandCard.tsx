@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface CommandCardProps {
     command: {
@@ -40,6 +41,7 @@ interface CommandCardProps {
 export function CommandCard({ command, onDelete, onEdit }: CommandCardProps) {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const handleCopy = async () => {
         try {
@@ -102,13 +104,26 @@ export function CommandCard({ command, onDelete, onEdit }: CommandCardProps) {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 className="text-destructive gap-2 cursor-pointer"
-                                onClick={() => onDelete?.(command._id)}
+                                onClick={() => setShowDeleteModal(true)}
                             >
                                 <Trash2 className="h-4 w-4" /> Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+
+                <ConfirmModal
+                    isOpen={showDeleteModal}
+                    onClose={() => setShowDeleteModal(false)}
+                    onConfirm={() => {
+                        onDelete?.(command._id);
+                        setShowDeleteModal(false);
+                    }}
+                    title="Remove Command?"
+                    description={`You are about to delete the command "${command.title}". This will permanently remove this utility script from your collection.`}
+                    confirmText="Delete Command"
+                    variant="destructive"
+                />
             </CardHeader>
 
             <CardContent className="space-y-4">

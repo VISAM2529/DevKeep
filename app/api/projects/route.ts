@@ -106,6 +106,23 @@ export async function POST(req: NextRequest) {
 
         await connectDB();
 
+        // 1. If community member, verify admin/owner status
+        if (validatedData.communityId) {
+            const Community = (await import("@/models/Community")).default;
+            const community = await Community.findById(validatedData.communityId);
+            if (!community) {
+                return NextResponse.json({ error: "Community not found" }, { status: 404 });
+            }
+
+            const isCommunityAdmin = community.members.some(
+                (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+            ) || community.ownerId.toString() === session.user.id;
+
+            if (!isCommunityAdmin) {
+                return NextResponse.json({ error: "Only community admins can create projects in this community" }, { status: 403 });
+            }
+        }
+
         const project = await Project.create({
             ...validatedData,
             userId: session.user.id,

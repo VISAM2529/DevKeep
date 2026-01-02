@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreHorizontal, Calendar, User as UserIcon, LayoutGrid, BarChart3 } from "lucide-react";
+import { Plus, MoreHorizontal, Calendar, User as UserIcon, LayoutGrid, BarChart3, Trash2 } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { TaskTimeline } from "./TaskTimeline";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +30,8 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<"board" | "timeline">("board");
+    const [taskToDelete, setTaskToDelete] = useState<any>(null);
+    const [isDeletingTask, setIsDeletingTask] = useState(false);
 
     const fetchTasks = async () => {
         try {
@@ -96,6 +99,25 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
         } catch (error) {
             toast({ variant: "destructive", title: "Update failed", description: "Reverting change." });
             fetchTasks(); // Revert
+        }
+    };
+
+    const deleteTask = async (taskId: string) => {
+        setIsDeletingTask(true);
+        try {
+            const res = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) throw new Error("Failed to delete task");
+
+            toast({ title: "Task Deleted", description: "The task has been successfully removed." });
+            fetchTasks();
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Action Failed", description: error.message });
+        } finally {
+            setIsDeletingTask(false);
+            setTaskToDelete(null);
         }
     };
 
@@ -187,6 +209,14 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
                                                                         >
                                                                             {task.priority}
                                                                         </Badge>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-6 w-6 text-muted-foreground hover:text-red-500 -mt-1 -mr-1"
+                                                                            onClick={() => setTaskToDelete(task)}
+                                                                        >
+                                                                            <Trash2 className="h-3 w-3" />
+                                                                        </Button>
                                                                     </div>
                                                                     <CardTitle className="text-sm font-medium leading-tight">
                                                                         {task.title}
@@ -241,6 +271,16 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
                 projectId={projectId}
                 collaborators={team}
                 onSuccess={fetchTasks}
+            />
+            <ConfirmModal
+                isOpen={!!taskToDelete}
+                onClose={() => setTaskToDelete(null)}
+                onConfirm={() => taskToDelete && deleteTask(taskToDelete._id)}
+                isLoading={isDeletingTask}
+                title="Delete Task?"
+                description={taskToDelete ? `This will permanently remove the task "${taskToDelete.title}". This action is irreversible.` : ""}
+                confirmText="Delete Task"
+                variant="destructive"
             />
         </div>
     );

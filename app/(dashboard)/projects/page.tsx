@@ -41,10 +41,6 @@ export default function ProjectsPage() {
     }, []);
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure? This will delete all associated credentials, commands, and notes.")) {
-            return;
-        }
-
         try {
             const res = await fetch(`/api/projects/${id}`, {
                 method: "DELETE",

@@ -21,15 +21,16 @@ import {
     Users
 } from "lucide-react";
 import { CommandPalette } from "@/components/CommandPalette";
+import { useNotifications } from "@/components/providers/NotificationProvider";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Projects", href: "/projects", icon: FolderKanban },
-    { name: "Communities", href: "/communities", icon: Users },
+    { name: "Projects", href: "/projects", icon: FolderKanban, badgeKey: "totalProjectsUnread" },
+    { name: "Communities", href: "/communities", icon: Users, badgeKey: "totalCommunitiesUnread" },
     { name: "Identity Vault", href: "/credentials", icon: Lock },
     { name: "Snippets", href: "/commands", icon: Terminal },
     { name: "Documentation", href: "/notes", icon: FileText },
-];
+] as const;
 
 interface SidebarProps {
     onClose?: () => void;
@@ -38,6 +39,7 @@ interface SidebarProps {
 export function Sidebar({ onClose }: SidebarProps) {
     const pathname = usePathname();
     const { data: session } = useSession();
+    const { counts, requestPermission } = useNotifications();
 
     const handleLinkClick = () => {
         if (onClose) onClose();
@@ -66,33 +68,55 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 space-y-1 px-3">
+            <nav className="flex-1 space-y-1 px-3 mb-6">
                 {navigation.map((item) => {
                     const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                    const badgeCount = "badgeKey" in item ? (counts[item.badgeKey as keyof typeof counts] as number) : 0;
+
                     return (
                         <Link
                             key={item.name}
                             href={item.href}
                             onClick={handleLinkClick}
                             className={cn(
-                                "group flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
+                                "group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                                 isActive
-                                    ? "text-white"
+                                    ? "text-white bg-[#1A1A1A]"
                                     : "text-[#888888] hover:text-white hover:bg-[#1A1A1A]"
                             )}
                         >
-                            <item.icon
-                                className={cn(
-                                    "h-5 w-5 transition-colors",
-                                    isActive ? "text-white" : "text-[#888888] group-hover:text-white"
-                                )}
-                                strokeWidth={isActive ? 2.5 : 2}
-                            />
-                            {item.name}
+                            <div className="flex items-center gap-3.5">
+                                <item.icon
+                                    className={cn(
+                                        "h-5 w-5 transition-colors",
+                                        isActive ? "text-white" : "text-[#888888] group-hover:text-white"
+                                    )}
+                                    strokeWidth={isActive ? 2.5 : 2}
+                                />
+                                {item.name}
+                            </div>
+                            {badgeCount > 0 && (
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg shadow-red-500/20">
+                                    {badgeCount > 99 ? "99+" : badgeCount}
+                                </span>
+                            )}
                         </Link>
                     );
                 })}
             </nav>
+
+            {/* Desktop Notification Promo */}
+            {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && (
+                <div className="px-5 mb-6">
+                    <button
+                        onClick={() => requestPermission()}
+                        className="w-full flex items-center gap-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all py-3 px-4 rounded-xl group"
+                    >
+                        <Zap className="h-4 w-4 fill-current" />
+                        <span className="text-xs font-semibold">Enable Desktop Alerts</span>
+                    </button>
+                </div>
+            )}
 
             {/* Bottom Section */}
             <div className="p-4 mt-auto">

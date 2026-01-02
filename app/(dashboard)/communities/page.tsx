@@ -5,29 +5,17 @@ import { Plus, Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CommunityCard } from "@/components/communities/CommunityCard";
+import { CommunityForm } from "@/components/communities/CommunityForm";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-
-const communitySchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    description: z.string().optional(),
-});
-
-type CommunityFormValues = z.infer<typeof communitySchema>;
 
 export default function CommunitiesPage() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -36,10 +24,6 @@ export default function CommunitiesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
-
-    const form = useForm<CommunityFormValues>({
-        resolver: zodResolver(communitySchema),
-    });
 
     const fetchCommunities = async () => {
         try {
@@ -59,35 +43,13 @@ export default function CommunitiesPage() {
         fetchCommunities();
     }, []);
 
-    const onSubmit = async (data: CommunityFormValues) => {
-        try {
-            const res = await fetch("/api/communities", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-
-            if (!res.ok) throw new Error("Failed to create community");
-
-            toast({
-                title: "Community Created",
-                description: "Your new community has been established.",
-            });
-            setIsDialogOpen(false);
-            fetchCommunities();
-            form.reset();
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to create community.",
-                variant: "destructive",
-            });
-        }
-    };
-
     const filteredCommunities = communities.filter((community) =>
         community.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const handleDelete = async (id: string) => {
+        setCommunities(communities.filter((c) => c._id !== id));
+    };
 
     return (
         <div className="h-full flex flex-col p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -113,32 +75,12 @@ export default function CommunitiesPage() {
                                 Establish a new space for your team projects and discussions.
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    placeholder="e.g. Frontend Team"
-                                    {...form.register("name")}
-                                />
-                                {form.formState.errors.name && (
-                                    <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea
-                                    id="description"
-                                    placeholder="What is this community all about?"
-                                    {...form.register("description")}
-                                />
-                            </div>
-                            <DialogFooter>
-                                <Button type="submit" disabled={form.formState.isSubmitting}>
-                                    {form.formState.isSubmitting ? "Creating..." : "Create Community"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                        <CommunityForm
+                            onSuccess={() => {
+                                setIsDialogOpen(false);
+                                fetchCommunities();
+                            }}
+                        />
                     </DialogContent>
                 </Dialog>
             </div>
@@ -162,7 +104,11 @@ export default function CommunitiesPage() {
             ) : filteredCommunities.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {filteredCommunities.map((community) => (
-                        <CommunityCard key={community._id} community={community} />
+                        <CommunityCard
+                            key={community._id}
+                            community={community}
+                            onDelete={handleDelete}
+                        />
                     ))}
                 </div>
             ) : (

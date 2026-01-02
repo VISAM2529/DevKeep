@@ -30,8 +30,11 @@ interface ChatInterfaceProps {
     projectId?: string;
 }
 
+import { useNotifications } from "@/components/providers/NotificationProvider";
+
 export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
     const { data: session } = useSession();
+    const { refresh } = useNotifications();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +60,7 @@ export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
             await fetch(`${apiEndpoint}/read`, {
                 method: "POST",
             });
+            refresh();
         } catch (error) {
             console.error("Failed to mark messages as read", error);
         }

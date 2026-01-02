@@ -38,7 +38,14 @@ export async function GET(req: NextRequest) {
                 _id: projectId,
                 $or: [
                     { userId: session.user.id },
-                    { "sharedWith.email": session.user.email?.toLowerCase() }
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
                 ]
             });
 
@@ -51,7 +58,14 @@ export async function GET(req: NextRequest) {
             const accessibleProjects = await Project.find({
                 $or: [
                     { userId: session.user.id },
-                    { "sharedWith.email": session.user.email?.toLowerCase() }
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
                 ]
             }).select("_id");
             const projectIds = accessibleProjects.map((p: any) => p._id);

@@ -37,11 +37,30 @@ export async function PUT(
         if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
         const isOwner = project.userId.toString() === session.user.id;
-        const collaborator = project.sharedWith.find((c: any) => c.email === session.user.email);
+        const collaborator = project.sharedWith.find(
+            (c: any) => c.email === session.user.email?.toLowerCase() && c.accepted === true
+        );
 
-        // Allow updates if owner or collaborator
-        if (!isOwner && !collaborator) {
-            return NextResponse.json({ error: "Access denied" }, { status: 403 });
+        // Check if user is Community Admin
+        let isCommunityAdmin = false;
+        if (project.communityId) {
+            const Community = (await import("@/models/Community")).default;
+            const community = await Community.findById(project.communityId);
+            if (community) {
+                isCommunityAdmin = community.members.some(
+                    (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+                ) || community.ownerId.toString() === session.user.id;
+            }
+        }
+
+        // Allow Owner, Admin, Project Lead, or Community Admin to manage tasks
+        const hasTaskManagementPrivileges = isOwner || isCommunityAdmin ||
+            (collaborator && (collaborator.role === "Admin" || collaborator.role === "Project Lead"));
+
+        if (!hasTaskManagementPrivileges) {
+            return NextResponse.json({
+                error: "Only Project Leads, Admins, or Community Admins can manage tasks"
+            }, { status: 403 });
         }
 
         // Prepare update object
@@ -97,15 +116,31 @@ export async function DELETE(
         if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
         const isOwner = project.userId.toString() === session.user.id;
-        // Only owner or Admin should delete? Or creator?
-        // Let's restrict deletion to Owner or Task Creator.
+
+        // Check if user is Community Admin
+        let isCommunityAdmin = false;
+        if (project.communityId) {
+            const Community = (await import("@/models/Community")).default;
+            const community = await Community.findById(project.communityId);
+            if (community) {
+                isCommunityAdmin = community.members.some(
+                    (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+                ) || community.ownerId.toString() === session.user.id;
+            }
+        }
 
         const task = await Task.findOne({ _id: taskId, projectId: id });
         if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
         const isCreator = task.creatorId.toString() === session.user.id;
 
-        if (!isOwner && !isCreator) {
+        // Check if user is Project Lead
+        const collaborator = project.sharedWith.find(
+            (c: any) => c.email === session.user.email?.toLowerCase() && c.accepted === true
+        );
+        const isProjectLead = collaborator && (collaborator.role === "Project Lead" || collaborator.role === "Admin");
+
+        if (!isOwner && !isCreator && !isCommunityAdmin && !isProjectLead) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 

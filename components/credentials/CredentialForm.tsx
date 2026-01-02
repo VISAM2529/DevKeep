@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Lock, Globe } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 const credentialSchema = z.object({
     platform: z.string().min(2, "Platform name/service is required."),
@@ -46,6 +47,8 @@ export function CredentialForm({ initialData, projects = [], onSuccess }: Creden
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [pendingValues, setPendingValues] = useState<CredentialFormValues | null>(null);
 
     const form = useForm<CredentialFormValues>({
         resolver: zodResolver(credentialSchema),
@@ -58,7 +61,7 @@ export function CredentialForm({ initialData, projects = [], onSuccess }: Creden
         },
     });
 
-    async function onSubmit(values: CredentialFormValues) {
+    async function processSubmit(values: CredentialFormValues) {
         setIsLoading(true);
         try {
             const url = initialData?._id
@@ -93,6 +96,16 @@ export function CredentialForm({ initialData, projects = [], onSuccess }: Creden
             });
         } finally {
             setIsLoading(false);
+            setShowUpdateModal(false);
+        }
+    }
+
+    async function onSubmit(values: CredentialFormValues) {
+        if (initialData?._id) {
+            setPendingValues(values);
+            setShowUpdateModal(true);
+        } else {
+            await processSubmit(values);
         }
     }
 
@@ -211,6 +224,17 @@ export function CredentialForm({ initialData, projects = [], onSuccess }: Creden
                     </Button>
                 </div>
             </form>
+
+            <ConfirmModal
+                isOpen={showUpdateModal}
+                onClose={() => setShowUpdateModal(false)}
+                onConfirm={() => pendingValues && processSubmit(pendingValues)}
+                isLoading={isLoading}
+                title="Update Credential?"
+                description={`You are about to modify the access keys for ${pendingValues?.platform}. Ensure you have the correct information before proceeding.`}
+                confirmText="Verify and Update"
+                variant="warning"
+            />
         </Form>
     );
 }

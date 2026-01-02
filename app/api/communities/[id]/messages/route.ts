@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/mongodb";
 import Message from "@/models/Message";
 import Community from "@/models/Community";
+import { encrypt, decrypt } from "@/lib/encryption";
 
 export async function GET(
     req: Request,
@@ -36,9 +37,20 @@ export async function GET(
             .populate("senderId", "name email image")
             .populate("readBy.userId", "name")
             .sort({ createdAt: 1 })
-            .limit(50); // Simple limit for MVP
+            .limit(100);
 
-        return NextResponse.json(messages);
+        // Decrypt messages
+        const decryptedMessages = messages.map(msg => {
+            const msgObj = msg.toObject();
+            try {
+                msgObj.content = decrypt(msgObj.content);
+            } catch (err) {
+                // If decryption fails, it might be an old plain-text message
+            }
+            return msgObj;
+        });
+
+        return NextResponse.json(decryptedMessages);
     } catch (error) {
         return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
     }
@@ -76,16 +88,22 @@ export async function POST(
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
+        // Encrypt content
+        const encryptedContent = encrypt(content);
+
         const message = await Message.create({
             communityId: id,
             senderId: session.user.id,
-            content,
+            content: encryptedContent,
         });
 
         // Populate sender info for immediate return
         await message.populate("senderId", "name email image");
 
-        return NextResponse.json(message, { status: 201 });
+        const responseMsg = message.toObject();
+        responseMsg.content = content; // Return plain text to original sender
+
+        return NextResponse.json(responseMsg, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
     }

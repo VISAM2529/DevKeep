@@ -44,9 +44,10 @@ type ProjectFormValues = {
 interface ProjectFormProps {
     initialData?: any;
     communityId?: string;
+    onSuccess?: () => void;
 }
 
-export function ProjectForm({ initialData, communityId }: ProjectFormProps) {
+export function ProjectForm({ initialData, communityId, onSuccess }: ProjectFormProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);

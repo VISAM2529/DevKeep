@@ -5,6 +5,7 @@ import connectDB from "@/lib/mongodb";
 import Project from "@/models/Project";
 import Message from "@/models/Message";
 import { z } from "zod";
+import { encrypt, decrypt } from "@/lib/encryption";
 
 const messageSchema = z.object({
     content: z.string().min(1, "Message cannot be empty"),
@@ -33,9 +34,7 @@ export async function GET(
         const isOwner = project.userId.toString() === session.user.id;
         const isCollaborator = project.sharedWith.some(
             (c: any) => c.email === session.user.email
-        ); // Note: Project model uses email for sharedWith, not userId ref usually? 
-        // Let me check Project model. Yes, sharedWith has { email, role, accepted }.
-        // So check by email.
+        );
 
         if (!isOwner && !isCollaborator) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
@@ -45,9 +44,21 @@ export async function GET(
             .populate("senderId", "name email image")
             .populate("readBy.userId", "name")
             .sort({ createdAt: 1 })
-            .limit(50);
+            .limit(100);
 
-        return NextResponse.json(messages);
+        // Decrypt messages
+        const decryptedMessages = messages.map(msg => {
+            const msgObj = msg.toObject();
+            try {
+                msgObj.content = decrypt(msgObj.content);
+            } catch (err) {
+                // If decryption fails, it might be an old plain-text message
+                // We keep it as is
+            }
+            return msgObj;
+        });
+
+        return NextResponse.json(decryptedMessages);
     } catch (error) {
         console.error("Fetch messages error:", error);
         return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
@@ -77,8 +88,6 @@ export async function POST(
         }
 
         const isOwner = project.userId.toString() === session.user.id;
-        // Check if collaborator AND accepted?
-        // Ideally only accepted collaborators can chat.
         const collaborator = project.sharedWith.find(
             (c: any) => c.email === session.user.email
         );
@@ -88,17 +97,23 @@ export async function POST(
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
+        // Encrypt content before saving
+        const encryptedContent = encrypt(content);
+
         const message = await Message.create({
             projectId: id,
             senderId: session.user.id,
-            content,
+            content: encryptedContent,
             readBy: [{ userId: session.user.id, readAt: new Date() }]
         });
 
         // Populate sender info for immediate display
         await message.populate("senderId", "name email image");
 
-        return NextResponse.json(message);
+        const responseMsg = message.toObject();
+        responseMsg.content = content; // Return plain text to original sender
+
+        return NextResponse.json(responseMsg);
 
     } catch (error: any) {
         if (error instanceof z.ZodError) {

@@ -44,7 +44,17 @@ export async function GET(
         if (!isOwner && command.projectId) {
             const project = await Project.findOne({
                 _id: command.projectId,
-                "sharedWith.email": session.user.email?.toLowerCase()
+                $or: [
+                    { userId: session.user.id },
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
+                ]
             });
             if (project) isCollaborator = true;
         }
@@ -93,7 +103,17 @@ export async function PUT(
         if (!isOwner && command.projectId) {
             const project = await Project.findOne({
                 _id: command.projectId,
-                "sharedWith.email": session.user.email?.toLowerCase()
+                $or: [
+                    { userId: session.user.id },
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
+                ]
             });
             if (project) isCollaborator = true;
         }
@@ -150,7 +170,17 @@ export async function DELETE(
         if (!isOwner && command.projectId) {
             const project = await Project.findOne({
                 _id: command.projectId,
-                "sharedWith.email": session.user.email?.toLowerCase()
+                $or: [
+                    { userId: session.user.id },
+                    {
+                        "sharedWith": {
+                            $elemMatch: {
+                                email: session.user.email?.toLowerCase(),
+                                accepted: true
+                            }
+                        }
+                    }
+                ]
             });
             if (project) isCollaborator = true;
         }

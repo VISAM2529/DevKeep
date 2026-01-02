@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, LogIn, LogOut, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface AttendanceWidgetProps {
     communityId: string;
@@ -19,6 +20,7 @@ export function AttendanceWidget({ communityId }: AttendanceWidgetProps) {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [showClockOutModal, setShowClockOutModal] = useState(false);
 
     const fetchStatus = async () => {
         try {
@@ -75,6 +77,7 @@ export function AttendanceWidget({ communityId }: AttendanceWidgetProps) {
             });
         } finally {
             setProcessing(false);
+            setShowClockOutModal(false);
         }
     };
 
@@ -136,7 +139,7 @@ export function AttendanceWidget({ communityId }: AttendanceWidgetProps) {
                 <Button
                     className="w-full gap-2 h-11"
                     variant={isActive ? "destructive" : "default"}
-                    onClick={handleClockAction}
+                    onClick={() => isActive ? setShowClockOutModal(true) : handleClockAction()}
                     disabled={processing}
                 >
                     {isActive ? (
@@ -157,6 +160,17 @@ export function AttendanceWidget({ communityId }: AttendanceWidgetProps) {
                         Click "Clock In" to start tracking your time
                     </div>
                 )}
+
+                <ConfirmModal
+                    isOpen={showClockOutModal}
+                    onClose={() => setShowClockOutModal(false)}
+                    onConfirm={handleClockAction}
+                    isLoading={processing}
+                    title="Finish Session?"
+                    description="You are about to clock out. This will end your current attendance session and record your total work hours."
+                    confirmText="Clock Out"
+                    variant="primary"
+                />
             </CardContent>
         </Card>
     );

@@ -12,16 +12,20 @@ import {
     ChevronRight,
     Calendar,
     LayoutGrid,
-    List
+    List,
+    Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 export default function NotesPage() {
     const { toast } = useToast();
     const [notes, setNotes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [noteToDelete, setNoteToDelete] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchNotes = async () => {
         try {
@@ -37,6 +41,32 @@ export default function NotesPage() {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const deleteNote = async (id: string) => {
+        setIsDeleting(true);
+        try {
+            const res = await fetch(`/api/notes/${id}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) throw new Error("Failed to delete note");
+
+            toast({
+                title: "Note Deleted",
+                description: "The note has been successfully removed.",
+            });
+            fetchNotes();
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message,
+            });
+        } finally {
+            setIsDeleting(false);
+            setNoteToDelete(null);
         }
     };
 
@@ -99,8 +129,8 @@ export default function NotesPage() {
             ) : filteredNotes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredNotes.map((note) => (
-                        <Link key={note._id} href={`/notes/${note._id}`}>
-                            <Card className="group h-full hover:bg-secondary/30 transition-all duration-300">
+                        <Card key={note._id} className="group relative h-full hover:bg-secondary/30 transition-all duration-300">
+                            <Link href={`/notes/${note._id}`} className="block h-full">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between mb-2">
                                         <Badge variant="outline" className="text-[10px] font-medium border-white/10 text-muted-foreground">
@@ -111,7 +141,7 @@ export default function NotesPage() {
                                             {new Date(note.updatedAt).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                                    <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-1 pr-8">
                                         {note.title}
                                     </CardTitle>
                                 </CardHeader>
@@ -123,8 +153,20 @@ export default function NotesPage() {
                                         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1" />
                                     </div>
                                 </CardContent>
-                            </Card>
-                        </Link>
+                            </Link>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setNoteToDelete(note);
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </Card>
                     ))}
                 </div>
             ) : (
@@ -144,6 +186,17 @@ export default function NotesPage() {
                     </Link>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={!!noteToDelete}
+                onClose={() => setNoteToDelete(null)}
+                onConfirm={() => noteToDelete && deleteNote(noteToDelete._id)}
+                isLoading={isDeleting}
+                title="Delete Documentation?"
+                description={noteToDelete ? `This will permanently remove the note "${noteToDelete.title}". This action cannot be reversed.` : ""}
+                confirmText="Delete Note"
+                variant="destructive"
+            />
         </div>
     );
 }

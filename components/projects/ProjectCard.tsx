@@ -2,17 +2,21 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     FolderKanban,
-    Github,
-    ExternalLink,
+    ChevronRight,
+    MessageSquare,
+    ListTodo,
     MoreVertical,
-    Trash2,
     Pencil,
-    Mail
+    Trash2,
+    Mail,
+    Github,
+    ExternalLink
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -21,28 +25,32 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/components/providers/NotificationProvider";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ProjectForm } from "./ProjectForm";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ProjectCardProps {
-    project: {
-        _id: string;
-        name: string;
-        description: string;
-        techStack: string[];
-        logo?: string;
-        repositoryUrl?: string;
-        liveUrl?: string;
-        status: string;
-        environment: string;
-        userId: string | { _id: string; email: string; name: string };
-    };
+    project: any;
     onDelete?: (id: string) => void;
     currentUserId?: string;
 }
 
 export function ProjectCard({ project, onDelete, currentUserId }: ProjectCardProps) {
-    const ownerId = typeof project.userId === 'string' ? project.userId : project.userId._id;
+    const { counts } = useNotifications();
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+    const projectUnread = counts.projects[project._id] || { messages: 0, tasks: 0 };
+    const ownerId = typeof project.userId === 'string' ? project.userId : project.userId?._id;
     const isOwner = currentUserId === ownerId;
-    const ownerEmail = typeof project.userId === 'object' ? project.userId.email : null;
+    const ownerEmail = typeof project.userId === 'object' ? project.userId?.email : null;
 
     return (
         <Card className="group relative overflow-hidden transition-all duration-300">
@@ -77,6 +85,20 @@ export function ProjectCard({ project, onDelete, currentUserId }: ProjectCardPro
                                 </Badge>
                             )}
                         </div>
+                        <div className="flex items-center gap-3 mt-2">
+                            {projectUnread.messages > 0 && (
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {projectUnread.messages}
+                                </div>
+                            )}
+                            {projectUnread.tasks > 0 && (
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
+                                    <ListTodo className="h-3 w-3" />
+                                    {projectUnread.tasks}
+                                </div>
+                            )}
+                        </div>
                         {!isOwner && ownerEmail && (
                             <div className="flex items-center gap-1.5 mt-2 text-[10px] text-muted-foreground font-medium">
                                 <Mail className="h-3 w-3" />
@@ -101,15 +123,13 @@ export function ProjectCard({ project, onDelete, currentUserId }: ProjectCardPro
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <Link href={`/projects/${project._id}`}>
-                                <DropdownMenuItem className="gap-2 cursor-pointer">
-                                    <Pencil className="h-4 w-4" /> Edit
-                                </DropdownMenuItem>
-                            </Link>
+                            <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => setIsEditDialogOpen(true)}>
+                                <Pencil className="h-4 w-4" /> Edit
+                            </DropdownMenuItem>
                             {isOwner && (
                                 <DropdownMenuItem
                                     className="text-destructive gap-2 cursor-pointer"
-                                    onClick={() => onDelete?.(project._id)}
+                                    onClick={() => setShowDeleteModal(true)}
                                 >
                                     <Trash2 className="h-4 w-4" /> Delete
                                 </DropdownMenuItem>
@@ -117,6 +137,34 @@ export function ProjectCard({ project, onDelete, currentUserId }: ProjectCardPro
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+
+                <ConfirmModal
+                    isOpen={showDeleteModal}
+                    onClose={() => setShowDeleteModal(false)}
+                    onConfirm={() => {
+                        onDelete?.(project._id);
+                        setShowDeleteModal(false);
+                    }}
+                    title="Delete Project?"
+                    description={`This will permanently remove ${project.name} and all its associated documentation, tasks, and credentials. This action cannot be undone.`}
+                    confirmText="Delete Project"
+                    variant="destructive"
+                />
+
+                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh]">
+                        <DialogHeader>
+                            <DialogTitle>Edit Project Info</DialogTitle>
+                            <DialogDescription>
+                                Update the core details and status of this project.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <ProjectForm
+                            initialData={project}
+                            onSuccess={() => setIsEditDialogOpen(false)}
+                        />
+                    </DialogContent>
+                </Dialog>
             </CardHeader>
 
             <CardContent className="space-y-4">
@@ -125,7 +173,7 @@ export function ProjectCard({ project, onDelete, currentUserId }: ProjectCardPro
                 </p>
 
                 <div className="flex flex-wrap gap-1.5">
-                    {project.techStack.map((tech) => (
+                    {project.techStack.map((tech: string) => (
                         <Badge key={tech} variant="secondary" className="text-[10px] font-medium text-muted-foreground">
                             {tech}
                         </Badge>

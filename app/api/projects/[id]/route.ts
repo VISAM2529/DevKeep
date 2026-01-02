@@ -88,21 +88,33 @@ export async function PUT(
 
         const userEmail = session.user.email?.toLowerCase();
 
-        const project = await Project.findOneAndUpdate(
-            {
-                _id: id,
-                $or: [
-                    { userId: new mongoose.Types.ObjectId(session.user.id) },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: userEmail,
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            },
+        const projectToUpdate = await Project.findById(id);
+        if (!projectToUpdate) {
+            return NextResponse.json({ error: "Project not found" }, { status: 404 });
+        }
+
+        const isOwner = projectToUpdate.userId.toString() === session.user.id;
+        const isCollaborator = projectToUpdate.sharedWith.some(
+            (c: any) => c.email === userEmail && c.accepted === true
+        );
+
+        let isCommunityAdmin = false;
+        if (projectToUpdate.communityId) {
+            const Community = (await import("@/models/Community")).default;
+            const community = await Community.findById(projectToUpdate.communityId);
+            if (community) {
+                isCommunityAdmin = community.members.some(
+                    (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+                ) || community.ownerId.toString() === session.user.id;
+            }
+        }
+
+        if (!isOwner && !isCollaborator && !isCommunityAdmin) {
+            return NextResponse.json({ error: "Permission denied" }, { status: 403 });
+        }
+
+        const project = await Project.findByIdAndUpdate(
+            id,
             validatedData,
             { new: true, runValidators: true }
         );
@@ -144,10 +156,30 @@ export async function DELETE(
 
         await connectDB();
 
-        const project = await Project.findOneAndDelete({
-            _id: id,
-            userId: session.user.id,
-        });
+        const projectToDelete = await Project.findById(id);
+        if (!projectToDelete) {
+            return NextResponse.json({ error: "Project not found" }, { status: 404 });
+        }
+
+        const isOwner = projectToDelete.userId.toString() === session.user.id;
+
+        let isCommunityAdmin = false;
+        if (projectToDelete.communityId) {
+            const Community = (await import("@/models/Community")).default;
+            const community = await Community.findById(projectToDelete.communityId);
+            if (community) {
+                isCommunityAdmin = community.members.some(
+                    (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+                ) || community.ownerId.toString() === session.user.id;
+            }
+        }
+
+        if (!isOwner && !isCommunityAdmin) {
+            return NextResponse.json({ error: "Only project owners or community admins can delete this project" }, { status: 403 });
+        }
+
+        await Project.findByIdAndDelete(id);
+        const project = projectToDelete;
 
         if (!project) {
             return NextResponse.json({ error: "Project not found" }, { status: 404 });

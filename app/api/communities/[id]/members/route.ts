@@ -144,3 +144,66 @@ export async function DELETE(
         return NextResponse.json({ error: "Failed to remove member" }, { status: 500 });
     }
 }
+
+export async function PATCH(
+    req: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await req.json();
+        const { memberId, role } = body;
+
+        if (!memberId || !role) {
+            return NextResponse.json({ error: "Member ID and role are required" }, { status: 400 });
+        }
+
+        if (!["admin", "member"].includes(role)) {
+            return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+        }
+
+        await connectDB();
+
+        const community = await Community.findById(id);
+        if (!community) {
+            return NextResponse.json({ error: "Community not found" }, { status: 404 });
+        }
+
+        // Verify requester permissions (admin/owner)
+        const isRequesterAdmin = community.members.some(
+            (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+        ) || community.ownerId.toString() === session.user.id;
+
+        if (!isRequesterAdmin) {
+            return NextResponse.json({ error: "Only admins can change member roles" }, { status: 403 });
+        }
+
+        // Update member role
+        const memberIndex = community.members.findIndex(
+            (m: any) => m.userId.toString() === memberId
+        );
+
+        if (memberIndex === -1) {
+            return NextResponse.json({ error: "Member not found in community" }, { status: 404 });
+        }
+
+        community.members[memberIndex].role = role;
+        await community.save();
+
+        const populatedCommunity = await Community.findById(id).populate("members.userId", "name email image");
+
+        return NextResponse.json({
+            message: "Role updated successfully",
+            members: populatedCommunity?.members
+        });
+
+    } catch (error) {
+        console.error("Update role error:", error);
+        return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
+    }
+}

@@ -37,8 +37,8 @@ export async function GET(
 
         const isOwner = project.userId.toString() === session.user.id;
         const isCollaborator = project.sharedWith.some(
-            (c: any) => c.email === session.user.email
-        ); // Add accepted check if strict
+            (c: any) => c.email === session.user.email?.toLowerCase() && c.accepted === true
+        );
 
         if (!isOwner && !isCollaborator) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
@@ -81,21 +81,30 @@ export async function POST(
 
         const isOwner = project.userId.toString() === session.user.id;
         const collaborator = project.sharedWith.find(
-            (c: any) => c.email === session.user.email
+            (c: any) => c.email === session.user.email?.toLowerCase() && c.accepted === true
         );
-        // User requested "Project Lead" role check.
-        // Currently roles are "Collaborator" | "Admin" (in Project schema default).
-        // I will add "Project Lead" to schema later.
-        // For now, allow Owner or any Admin/Collaborator to create tasks? 
-        // User said: "Project Lead who can assign task". Use this logic.
-        // If regular collaborator, maybe they can create tasks but not assign?
-        // Let's allow creation for now.
 
-        if (!isOwner && !collaborator) {
-            return NextResponse.json({ error: "Access denied" }, { status: 403 });
+        // Check if user is Community Admin
+        let isCommunityAdmin = false;
+        if (project.communityId) {
+            const Community = (await import("@/models/Community")).default;
+            const community = await Community.findById(project.communityId);
+            if (community) {
+                isCommunityAdmin = community.members.some(
+                    (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+                ) || community.ownerId.toString() === session.user.id;
+            }
         }
 
-        // Validation logic for "Project Lead" could go here if schema updated.
+        // Allow Owner, Admin, Project Lead, or Community Admin to manage tasks
+        const hasTaskManagementPrivileges = isOwner || isCommunityAdmin ||
+            (collaborator && (collaborator.role === "Admin" || collaborator.role === "Project Lead"));
+
+        if (!hasTaskManagementPrivileges) {
+            return NextResponse.json({
+                error: "Only Project Leads, Admins, or Community Admins can create and assign tasks"
+            }, { status: 403 });
+        }
 
         const task = await Task.create({
             projectId: id,

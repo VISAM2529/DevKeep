@@ -14,7 +14,7 @@ export interface IProject extends Document {
     banner?: string;
     sharedWith: {
         email: string;
-        role: "Collaborator" | "Admin";
+        role: "Collaborator" | "Admin" | "Project Lead";
         addedAt: Date;
         accepted: boolean;
     }[];

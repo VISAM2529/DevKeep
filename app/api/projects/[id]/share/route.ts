@@ -9,7 +9,7 @@ import { z } from "zod";
 
 const shareSchema = z.object({
     email: z.string().email("Invalid email address"),
-    role: z.enum(["Collaborator", "Admin"]).default("Collaborator"),
+    role: z.enum(["Collaborator", "Admin", "Project Lead"]).default("Collaborator"),
 });
 
 // POST /api/projects/[id]/share - Add a collaborator
