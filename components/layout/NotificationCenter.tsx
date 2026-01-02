@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Check, Trash2, Info, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { Bell, Check, Trash2, Info, CheckCircle2, AlertCircle, X, Video } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -72,6 +72,7 @@ export function NotificationCenter() {
             case "task_update": return <Info className="h-4 w-4 text-emerald-500" />;
             case "community_event": return <Info className="h-4 w-4 text-purple-500" />;
             case "system": return <AlertCircle className="h-4 w-4 text-amber-500" />;
+            case "meeting_started": return <Video className="h-4 w-4 text-green-500" />;
             default: return <Info className="h-4 w-4 text-muted-foreground" />;
         }
     };
@@ -160,11 +161,11 @@ export function NotificationCenter() {
                                             {notification.link && (
                                                 <Link href={notification.link}>
                                                     <Button
-                                                        variant="ghost"
+                                                        variant={notification.type === 'meeting_started' ? "default" : "ghost"}
                                                         size="sm"
-                                                        className="h-7 px-2 text-[10px] text-muted-foreground hover:text-white hover:bg-white/5"
+                                                        className={`h-7 px-2 text-[10px] ${notification.type === 'meeting_started' ? "bg-green-600 hover:bg-green-700 text-white" : "text-muted-foreground hover:text-white hover:bg-white/5"}`}
                                                     >
-                                                        View Details
+                                                        {notification.type === 'meeting_started' ? "Join Meeting" : "View Details"}
                                                     </Button>
                                                 </Link>
                                             )}

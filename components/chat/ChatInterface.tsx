@@ -29,11 +29,12 @@ interface Message {
 interface ChatInterfaceProps {
     communityId?: string;
     projectId?: string;
+    className?: string; // Allow custom styling
 }
 
 import { useNotifications } from "@/components/providers/NotificationProvider";
 
-export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
+export function ChatInterface({ communityId, projectId, className }: ChatInterfaceProps) {
     const { data: session } = useSession();
     const { refresh } = useNotifications();
     const [messages, setMessages] = useState<Message[]>([]);
@@ -128,7 +129,7 @@ export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
     return (
         <div className={`flex flex-col border border-border/40 rounded-xl bg-card overflow-hidden transition-all duration-300 ${isFullscreen
             ? "fixed inset-0 z-[100] rounded-none md:rounded-none h-screen w-screen"
-            : "h-[500px] md:h-[600px] relative"
+            : className || "h-[500px] md:h-[600px] relative"
             }`}>
             <div className="p-3 md:p-4 border-b border-border/40 bg-muted/20 flex items-center justify-between">
                 <h3 className="font-semibold text-xs md:text-sm flex items-center gap-2 text-foreground">

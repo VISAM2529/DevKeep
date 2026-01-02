@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Settings, Users, UserPlus, Video } from "lucide-react";
+import { ArrowLeft, Plus, Settings, Users, UserPlus, Video, MessageSquare, FileText } from "lucide-react";
 import VideoConferenceComponent from "@/components/VideoConference";
 import { MeetingNotesPanel } from "@/components/meeting/MeetingNotesPanel";
 import { ChatInterface } from "@/components/chat/ChatInterface";
@@ -28,6 +28,7 @@ export default function CommunityDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
     const [isMeeting, setIsMeeting] = useState(false);
+    const [activeMeetingTab, setActiveMeetingTab] = useState<'none' | 'notes' | 'chat'>('none');
 
     const fetchDetails = useCallback(async () => {
         try {
@@ -96,10 +97,48 @@ export default function CommunityDetailPage() {
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end items-center gap-2">
+                    {isMeeting && (
+                        <div className="flex items-center gap-1 bg-secondary/20 rounded-lg p-1 mr-2">
+                            <Button
+                                variant={activeMeetingTab === 'chat' ? "secondary" : "ghost"}
+                                size="sm"
+                                onClick={() => setActiveMeetingTab(activeMeetingTab === 'chat' ? 'none' : 'chat')}
+                                className="h-8 gap-2 text-xs"
+                            >
+                                <MessageSquare className="h-3.5 w-3.5" />
+                                Chat
+                            </Button>
+                            <Button
+                                variant={activeMeetingTab === 'notes' ? "secondary" : "ghost"}
+                                size="sm"
+                                onClick={() => setActiveMeetingTab(activeMeetingTab === 'notes' ? 'none' : 'notes')}
+                                className="h-8 gap-2 text-xs"
+                            >
+                                <FileText className="h-3.5 w-3.5" />
+                                Notes
+                            </Button>
+                        </div>
+                    )}
                     <Button
                         variant={isMeeting ? "destructive" : "default"}
-                        onClick={() => setIsMeeting(!isMeeting)}
+                        onClick={async () => {
+                            if (!isMeeting) {
+                                // Starting meeting
+                                try {
+                                    fetch("/api/notifications/meeting", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ communityId: params.id }),
+                                    });
+                                } catch (err) {
+                                    console.error("Failed to notify meeting start", err);
+                                }
+                            } else {
+                                setActiveMeetingTab('none');
+                            }
+                            setIsMeeting(!isMeeting);
+                        }}
                         className="h-9 gap-2 text-xs"
                     >
                         <Video className="h-3.5 w-3.5" />
@@ -113,14 +152,26 @@ export default function CommunityDetailPage() {
             {/* Content Tabs */}
             {isMeeting ? (
                 <div className="flex h-[calc(100vh-200px)] gap-4 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex-1 rounded-xl overflow-hidden border border-border/40 shadow-sm">
+                    <div className={`transition-all duration-300 rounded-xl overflow-hidden border border-border/40 shadow-sm ${activeMeetingTab === 'none' ? 'flex-1' : 'flex-[2]'
+                        }`}>
                         <VideoConferenceComponent
                             roomId={`community-${params.id}`}
                             username={session?.user?.name || "Member"}
                             onLeave={() => setIsMeeting(false)}
                         />
                     </div>
-                    <MeetingNotesPanel communityId={params.id as string} />
+                    {activeMeetingTab !== 'none' && (
+                        <div className="flex-1 min-w-[320px] max-w-[400px] animate-in slide-in-from-right-4 duration-300">
+                            {activeMeetingTab === 'chat' ? (
+                                <ChatInterface
+                                    communityId={params.id as string}
+                                    className="h-full"
+                                />
+                            ) : (
+                                <MeetingNotesPanel communityId={params.id as string} />
+                            )}
+                        </div>
+                    )}
                 </div>
             ) : (
                 <Tabs defaultValue="projects" className="flex-1 flex flex-col space-y-6">
