@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface INote extends Document {
     userId: mongoose.Types.ObjectId;
     projectId?: mongoose.Types.ObjectId;
+    communityId?: mongoose.Types.ObjectId;
     title: string;
     content: string; // Markdown content
     attachments: string[]; // Cloudinary URLs

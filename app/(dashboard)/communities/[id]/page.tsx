@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Settings, Users, UserPlus, Video } from "lucide-react";
 import VideoConferenceComponent from "@/components/VideoConference";
 import { MeetingNotesPanel } from "@/components/meeting/MeetingNotesPanel";
