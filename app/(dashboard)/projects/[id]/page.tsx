@@ -280,26 +280,32 @@ export default function ProjectDetailPage() {
                             <Button
                                 variant={isMeeting ? "destructive" : "default"}
                                 onClick={async () => {
-                                    if (!isMeeting) {
-                                        // Starting meeting
-                                        try {
-                                            fetch("/api/notifications/meeting", {
-                                                method: "POST",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({ projectId: params.id }),
-                                            });
-                                        } catch (err) {
-                                            console.error("Failed to notify meeting start", err);
-                                        }
-                                    } else {
+                                    if (isMeeting) {
+                                        setIsMeeting(false);
                                         setActiveMeetingTab('none');
+                                    } else {
+                                        if (project?.isMeetingActive) {
+                                            setIsMeeting(true);
+                                        } else {
+                                            setIsMeeting(true);
+                                            try {
+                                                fetch("/api/notifications/meeting", {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ projectId: params.id }),
+                                                });
+                                                setProject((prev: any) => prev ? ({ ...prev, isMeetingActive: true }) : null);
+                                            } catch (err) {
+                                                console.error("Failed to notify meeting start", err);
+                                            }
+                                        }
                                     }
-                                    setIsMeeting(!isMeeting);
                                 }}
-                                className="flex-1 md:flex-none h-9 md:h-10 gap-2 text-xs"
+                                className={`flex-1 md:flex-none h-9 md:h-10 gap-2 text-xs ${!isMeeting && project?.isMeetingActive ? "bg-green-600 hover:bg-green-700 text-white" : ""
+                                    }`}
                             >
                                 <Video className="h-3.5 w-3.5" />
-                                {isMeeting ? "End Meeting" : "Meet"}
+                                {isMeeting ? "End Meeting" : (project?.isMeetingActive ? "Join Meeting" : "Meet")}
                             </Button>
                         </div>
                         <Button

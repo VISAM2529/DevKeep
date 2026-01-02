@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
             message = `A meeting has started in project: ${project.name}`;
             link = `/projects/${projectId}?join=true`;
             contextId = { projectId };
+
+            // Set meeting active
+            await Project.findByIdAndUpdate(projectId, { isMeetingActive: true });
         }
         else if (communityId) {
             const community = await Community.findById(communityId).populate("members.userId");
@@ -78,6 +81,9 @@ export async function POST(req: NextRequest) {
             message = `A meeting has started in community: ${community.name}`;
             link = `/communities/${communityId}?join=true`;
             contextId = { communityId };
+
+            // Set meeting active
+            await Community.findByIdAndUpdate(communityId, { isMeetingActive: true });
         }
 
         if (recipients.length === 0) {

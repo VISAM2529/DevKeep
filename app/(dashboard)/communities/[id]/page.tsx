@@ -123,26 +123,32 @@ export default function CommunityDetailPage() {
                     <Button
                         variant={isMeeting ? "destructive" : "default"}
                         onClick={async () => {
-                            if (!isMeeting) {
-                                // Starting meeting
-                                try {
-                                    fetch("/api/notifications/meeting", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ communityId: params.id }),
-                                    });
-                                } catch (err) {
-                                    console.error("Failed to notify meeting start", err);
-                                }
-                            } else {
+                            if (isMeeting) {
+                                setIsMeeting(false);
                                 setActiveMeetingTab('none');
+                            } else {
+                                if (community?.isMeetingActive) {
+                                    setIsMeeting(true);
+                                } else {
+                                    setIsMeeting(true);
+                                    try {
+                                        fetch("/api/notifications/meeting", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ communityId: params.id }),
+                                        });
+                                        setCommunity((prev: any) => prev ? ({ ...prev, isMeetingActive: true }) : null);
+                                    } catch (err) {
+                                        console.error("Failed to notify meeting start", err);
+                                    }
+                                }
                             }
-                            setIsMeeting(!isMeeting);
                         }}
-                        className="h-9 gap-2 text-xs"
+                        className={`h-9 gap-2 text-xs ${!isMeeting && community?.isMeetingActive ? "bg-green-600 hover:bg-green-700 text-white" : ""
+                            }`}
                     >
                         <Video className="h-3.5 w-3.5" />
-                        {isMeeting ? "End Meeting" : "Meet"}
+                        {isMeeting ? "End Meeting" : (community?.isMeetingActive ? "Join Meeting" : "Meet")}
                     </Button>
                 </div>
             </div>

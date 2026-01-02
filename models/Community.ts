@@ -10,6 +10,7 @@ export interface ICommunity extends Document {
         joinedAt: Date;
     }[];
     icon?: string;
+    isMeetingActive: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -41,6 +42,10 @@ const CommunitySchema = new Schema<ICommunity>(
         ],
         icon: {
             type: String,
+        },
+        isMeetingActive: {
+            type: Boolean,
+            default: false,
         },
     },
     {

@@ -10,6 +10,7 @@ export interface IProject extends Document {
     liveUrl?: string;
     environment: "Local" | "Staging" | "Production";
     status: "Active" | "Archived";
+    isMeetingActive: boolean;
     logo?: string;
     banner?: string;
     sharedWith: {
@@ -65,6 +66,10 @@ const ProjectSchema = new Schema<IProject>(
             type: String,
             enum: ["Active", "Archived"],
             default: "Active",
+        },
+        isMeetingActive: {
+            type: Boolean,
+            default: false,
         },
         logo: {
             type: String,
