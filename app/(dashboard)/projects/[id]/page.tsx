@@ -24,6 +24,7 @@ import {
     LayoutList,
     Paperclip,
     Loader2,
+    Video,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
@@ -41,6 +42,8 @@ import { CommandForm } from "@/components/commands/CommandForm";
 import { CredentialCard } from "@/components/credentials/CredentialCard";
 import { CommandCard } from "@/components/commands/CommandCard";
 import { CollaboratorModal } from "@/components/projects/CollaboratorModal";
+import VideoConferenceComponent from "@/components/VideoConference";
+import { MeetingNotesPanel } from "@/components/meeting/MeetingNotesPanel";
 import Image from "next/image";
 
 export default function ProjectDetailPage() {
@@ -58,6 +61,7 @@ export default function ProjectDetailPage() {
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [selectedResource, setSelectedResource] = useState<any>(null);
     const [uploading, setUploading] = useState(false);
+    const [isMeeting, setIsMeeting] = useState(false);
 
     const handleNoteUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -250,6 +254,14 @@ export default function ProjectDetailPage() {
                             <Settings className="h-3.5 w-3.5" />
                         </Button>
                         <Button
+                            variant={isMeeting ? "destructive" : "default"}
+                            onClick={() => setIsMeeting(!isMeeting)}
+                            className="flex-1 md:flex-none h-9 md:h-10 gap-2 text-xs"
+                        >
+                            <Video className="h-3.5 w-3.5" />
+                            {isMeeting ? "End Meeting" : "Meet"}
+                        </Button>
+                        <Button
                             onClick={() => setIsShareModalOpen(true)}
                             className="flex-1 md:flex-none h-9 md:h-10 gap-2 text-xs"
                         >
@@ -260,236 +272,254 @@ export default function ProjectDetailPage() {
                 </div>
             </div>
 
-            {/* Overview Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-                <Card className="col-span-1">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
-                        <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Credentials</CardTitle>
-                        <Lock className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
-                        <div className="text-xl md:text-2xl font-bold text-white">{credentials.length}</div>
-                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Secured items</p>
-                    </CardContent>
-                </Card>
-                <Card className="col-span-1">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
-                        <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Commands</CardTitle>
-                        <Terminal className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-500" />
-                    </CardHeader>
-                    <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
-                        <div className="text-xl md:text-2xl font-bold text-white">{commands.length}</div>
-                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Snippets stored</p>
-                    </CardContent>
-                </Card>
-                <Card className="col-span-2 md:col-span-1">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
-                        <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Notes</CardTitle>
-                        <FileText className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-500" />
-                    </CardHeader>
-                    <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
-                        <div className="text-xl md:text-2xl font-bold text-white">{notes.length}</div>
-                        <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Docs created</p>
-                    </CardContent>
-                </Card>
-            </div>
 
-            {/* Content Tabs */}
-            <Tabs defaultValue="credentials" className="w-full" onValueChange={setActiveTab}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <TabsList className="h-auto p-1 flex overflow-x-auto no-scrollbar justify-start bg-secondary/20 w-fit max-w-full">
-                        <TabsTrigger value="credentials" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
-                            <Lock className="h-3.5 w-3.5" />
-                            Credentials
-                        </TabsTrigger>
-                        <TabsTrigger value="commands" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
-                            <Terminal className="h-3.5 w-3.5" />
-                            Commands
-                        </TabsTrigger>
-                        <TabsTrigger value="notes" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
-                            <FileText className="h-3.5 w-3.5" />
-                            Notes
-                        </TabsTrigger>
-                        <TabsTrigger value="tasks" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
-                            <LayoutList className="h-3.5 w-3.5" />
-                            Tasks
-                        </TabsTrigger>
-                        <TabsTrigger value="chat" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
-                            <Users className="h-3.5 w-3.5" />
-                            Discussion
-                        </TabsTrigger>
-                    </TabsList>
 
-                    <div className="flex items-center gap-2">
-                        {activeTab === 'notes' && (
-                            <div className="relative">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-9 gap-2"
-                                    disabled={uploading}
-                                >
-                                    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
-                                    Upload Doc
-                                </Button>
-                                <input
-                                    type="file"
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                    onChange={handleNoteUpload}
-                                    accept=".doc,.docx,.xls,.xlsx,.pdf"
-                                />
-                            </div>
-                        )}
-                        <Dialog open={isResourceDialogOpen} onOpenChange={(open) => {
-                            setIsResourceDialogOpen(open);
-                            if (!open) setSelectedResource(null);
-                        }}>
-                            <Button
-                                size="sm"
-                                className="h-9 gap-2"
-                                onClick={() => {
-                                    if (activeTab === 'notes') {
-                                        router.push(`/notes/new?projectId=${params.id}`);
-                                    } else {
-                                        setIsResourceDialogOpen(true);
-                                    }
-                                }}
-                            >
-                                <Plus className="h-3.5 w-3.5" />
-                                Add Item
-                            </Button>
-                            <DialogContent className="sm:max-w-[600px]">
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        {selectedResource ? "Edit" : "New"} {activeTab === 'credentials' ? 'Credential' : activeTab === 'commands' ? 'Command' : 'Item'}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        {activeTab === 'credentials' && "Securely store a new credential for this project."}
-                                        {activeTab === 'commands' && "Save a useful command snippet for this project."}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                {activeTab === 'credentials' && (
-                                    <CredentialForm
-                                        initialData={selectedResource || { projectId: params.id }}
-                                        projects={[project]}
-                                        onSuccess={handleSuccess}
-                                    />
-                                )}
-                                {activeTab === 'commands' && (
-                                    <CommandForm
-                                        initialData={selectedResource || { projectId: params.id }}
-                                        projects={[project]}
-                                        onSuccess={handleSuccess}
-                                    />
-                                )}
-                            </DialogContent>
-                        </Dialog>
+            {
+                isMeeting ? (
+                    <div className="flex h-[calc(100vh-200px)] gap-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex-1 rounded-xl overflow-hidden border border-border/40 shadow-sm">
+                            <VideoConferenceComponent
+                                roomId={`project-${params.id}`}
+                                username={session?.user?.name || "Member"}
+                                onLeave={() => setIsMeeting(false)}
+                            />
+                        </div>
+                        <MeetingNotesPanel projectId={params.id as string} />
                     </div>
-                </div>
+                ) : (
+                    <>
+                        {/* Overview Stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+                            <Card className="col-span-1">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
+                                    <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Credentials</CardTitle>
+                                    <Lock className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                                </CardHeader>
+                                <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
+                                    <div className="text-xl md:text-2xl font-bold text-white">{credentials.length}</div>
+                                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Secured items</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="col-span-1">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
+                                    <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Commands</CardTitle>
+                                    <Terminal className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-500" />
+                                </CardHeader>
+                                <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
+                                    <div className="text-xl md:text-2xl font-bold text-white">{commands.length}</div>
+                                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Snippets stored</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="col-span-2 md:col-span-1">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
+                                    <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Notes</CardTitle>
+                                    <FileText className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-500" />
+                                </CardHeader>
+                                <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
+                                    <div className="text-xl md:text-2xl font-bold text-white">{notes.length}</div>
+                                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Docs created</p>
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                <TabsContent value="credentials" className="mt-0 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {credentials.length > 0 ? (
-                            credentials.map((cred) => (
-                                <CredentialCard
-                                    key={cred._id}
-                                    credential={cred}
-                                    onDelete={(id) => handleDeleteResource('credential', id)}
-                                    onEdit={(c) => {
-                                        setSelectedResource(c);
-                                        setIsResourceDialogOpen(true);
-                                    }}
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-full flex flex-col items-center justify-center p-12 custom-dashed rounded-xl bg-secondary/5 text-center">
-                                <Lock className="h-10 w-10 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-medium text-white">No Credentials</h3>
-                                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                                    Store API keys, database URLs, and other secrets securely.
-                                </p>
+                        {/* Content Tabs */}
+                        <Tabs defaultValue="credentials" className="w-full" onValueChange={setActiveTab}>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                                <TabsList className="h-auto p-1 flex overflow-x-auto no-scrollbar justify-start bg-secondary/20 w-fit max-w-full">
+                                    <TabsTrigger value="credentials" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
+                                        <Lock className="h-3.5 w-3.5" />
+                                        Credentials
+                                    </TabsTrigger>
+                                    <TabsTrigger value="commands" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
+                                        <Terminal className="h-3.5 w-3.5" />
+                                        Commands
+                                    </TabsTrigger>
+                                    <TabsTrigger value="notes" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
+                                        <FileText className="h-3.5 w-3.5" />
+                                        Notes
+                                    </TabsTrigger>
+                                    <TabsTrigger value="tasks" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
+                                        <LayoutList className="h-3.5 w-3.5" />
+                                        Tasks
+                                    </TabsTrigger>
+                                    <TabsTrigger value="chat" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
+                                        <Users className="h-3.5 w-3.5" />
+                                        Discussion
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <div className="flex items-center gap-2">
+                                    {activeTab === 'notes' && (
+                                        <div className="relative">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-9 gap-2"
+                                                disabled={uploading}
+                                            >
+                                                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                                                Upload Doc
+                                            </Button>
+                                            <input
+                                                type="file"
+                                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                                onChange={handleNoteUpload}
+                                                accept=".doc,.docx,.xls,.xlsx,.pdf"
+                                            />
+                                        </div>
+                                    )}
+                                    <Dialog open={isResourceDialogOpen} onOpenChange={(open) => {
+                                        setIsResourceDialogOpen(open);
+                                        if (!open) setSelectedResource(null);
+                                    }}>
+                                        <Button
+                                            size="sm"
+                                            className="h-9 gap-2"
+                                            onClick={() => {
+                                                if (activeTab === 'notes') {
+                                                    router.push(`/notes/new?projectId=${params.id}`);
+                                                } else {
+                                                    setIsResourceDialogOpen(true);
+                                                }
+                                            }}
+                                        >
+                                            <Plus className="h-3.5 w-3.5" />
+                                            Add Item
+                                        </Button>
+                                        <DialogContent className="sm:max-w-[600px]">
+                                            <DialogHeader>
+                                                <DialogTitle>
+                                                    {selectedResource ? "Edit" : "New"} {activeTab === 'credentials' ? 'Credential' : activeTab === 'commands' ? 'Command' : 'Item'}
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                    {activeTab === 'credentials' && "Securely store a new credential for this project."}
+                                                    {activeTab === 'commands' && "Save a useful command snippet for this project."}
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            {activeTab === 'credentials' && (
+                                                <CredentialForm
+                                                    initialData={selectedResource || { projectId: params.id }}
+                                                    projects={[project]}
+                                                    onSuccess={handleSuccess}
+                                                />
+                                            )}
+                                            {activeTab === 'commands' && (
+                                                <CommandForm
+                                                    initialData={selectedResource || { projectId: params.id }}
+                                                    projects={[project]}
+                                                    onSuccess={handleSuccess}
+                                                />
+                                            )}
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
                             </div>
-                        )}
-                    </div>
-                </TabsContent>
 
-                <TabsContent value="commands" className="mt-0 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {commands.length > 0 ? (
-                            commands.map((cmd) => (
-                                <CommandCard
-                                    key={cmd._id}
-                                    command={cmd}
-                                    onDelete={(id) => handleDeleteResource('command', id)}
-                                    onEdit={(c) => {
-                                        setSelectedResource(c);
-                                        setIsResourceDialogOpen(true);
-                                    }}
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-full flex flex-col items-center justify-center p-12 custom-dashed rounded-xl bg-secondary/5 text-center">
-                                <Terminal className="h-10 w-10 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-medium text-white">No Commands</h3>
-                                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                                    Save frequently used CLI commands and scripts.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="notes" className="mt-0 space-y-4">
-                    {/* ... notes content ... */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {notes.length > 0 ? (
-                            notes.map((note) => (
-                                <Link key={note._id} href={`/notes/${note._id}`}>
-                                    <Card className="h-full hover:border-white/20 transition-colors cursor-pointer group">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <Badge variant="outline" className="text-[10px] h-5 font-medium text-muted-foreground">
-                                                    Note
-                                                </Badge>
-                                                <FileText className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                                            </div>
-                                            <CardTitle className="text-base font-semibold leading-tight line-clamp-1">
-                                                {note.title}
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-4 min-h-[40px]">
-                                                {note.content.substring(0, 100).replace(/[#*`]/g, "")}...
+                            <TabsContent value="credentials" className="mt-0 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {credentials.length > 0 ? (
+                                        credentials.map((cred) => (
+                                            <CredentialCard
+                                                key={cred._id}
+                                                credential={cred}
+                                                onDelete={(id) => handleDeleteResource('credential', id)}
+                                                onEdit={(c) => {
+                                                    setSelectedResource(c);
+                                                    setIsResourceDialogOpen(true);
+                                                }}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full flex flex-col items-center justify-center p-12 custom-dashed rounded-xl bg-secondary/5 text-center">
+                                            <Lock className="h-10 w-10 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-medium text-white">No Credentials</h3>
+                                            <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                                                Store API keys, database URLs, and other secrets securely.
                                             </p>
-                                            <div className="flex items-center justify-between pt-4 border-t border-border/40">
-                                                <div className="text-xs text-muted-foreground">
-                                                    {new Date(note.updatedAt).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            ))
-                        ) : (
-                            <div className="col-span-full flex flex-col items-center justify-center p-12 custom-dashed rounded-xl bg-secondary/5 text-center">
-                                <FileText className="h-10 w-10 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-medium text-white">No Notes</h3>
-                                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                                    Create documentation and keep track of project details.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </TabsContent>
+                                        </div>
+                                    )}
+                                </div>
+                            </TabsContent>
 
-                <TabsContent value="tasks" className="mt-0 h-full">
-                    <TaskBoard projectId={project._id} />
-                </TabsContent>
+                            <TabsContent value="commands" className="mt-0 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {commands.length > 0 ? (
+                                        commands.map((cmd) => (
+                                            <CommandCard
+                                                key={cmd._id}
+                                                command={cmd}
+                                                onDelete={(id) => handleDeleteResource('command', id)}
+                                                onEdit={(c) => {
+                                                    setSelectedResource(c);
+                                                    setIsResourceDialogOpen(true);
+                                                }}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full flex flex-col items-center justify-center p-12 custom-dashed rounded-xl bg-secondary/5 text-center">
+                                            <Terminal className="h-10 w-10 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-medium text-white">No Commands</h3>
+                                            <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                                                Save frequently used CLI commands and scripts.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </TabsContent>
 
-                <TabsContent value="chat" className="mt-0">
-                    <ChatInterface projectId={project._id} />
-                </TabsContent>
-            </Tabs>
+                            <TabsContent value="notes" className="mt-0 space-y-4">
+                                {/* ... notes content ... */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {notes.length > 0 ? (
+                                        notes.map((note) => (
+                                            <Link key={note._id} href={`/notes/${note._id}`}>
+                                                <Card className="h-full hover:border-white/20 transition-colors cursor-pointer group">
+                                                    <CardHeader className="pb-3">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <Badge variant="outline" className="text-[10px] h-5 font-medium text-muted-foreground">
+                                                                Note
+                                                            </Badge>
+                                                            <FileText className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                        </div>
+                                                        <CardTitle className="text-base font-semibold leading-tight line-clamp-1">
+                                                            {note.title}
+                                                        </CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-4 min-h-[40px]">
+                                                            {note.content.substring(0, 100).replace(/[#*`]/g, "")}...
+                                                        </p>
+                                                        <div className="flex items-center justify-between pt-4 border-t border-border/40">
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {new Date(note.updatedAt).toLocaleDateString()}
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </Link>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full flex flex-col items-center justify-center p-12 custom-dashed rounded-xl bg-secondary/5 text-center">
+                                            <FileText className="h-10 w-10 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-medium text-white">No Notes</h3>
+                                            <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                                                Create documentation and keep track of project details.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="tasks" className="mt-0 h-full">
+                                <TaskBoard projectId={project._id} />
+                            </TabsContent>
+
+                            <TabsContent value="chat" className="mt-0">
+                                <ChatInterface projectId={project._id} />
+                            </TabsContent>
+                        </Tabs>
+                    </>
+                )}
 
             <CollaboratorModal
                 isOpen={isShareModalOpen}
@@ -500,6 +530,6 @@ export default function ProjectDetailPage() {
                 collaborators={project.sharedWith || []}
                 onUpdate={fetchData}
             />
-        </div>
+        </div >
     );
 }

@@ -24,6 +24,11 @@ const NoteSchema = new Schema<INote>(
             ref: "Project",
             index: true,
         },
+        communityId: {
+            type: Schema.Types.ObjectId,
+            ref: "Community",
+            index: true,
+        },
         title: {
             type: String,
             required: [true, "Title is required"],
