@@ -11,7 +11,6 @@ const messageSchema = z.object({
     content: z.string().min(1, "Message cannot be empty"),
 });
 
-// GET /api/projects/[id]/messages
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
