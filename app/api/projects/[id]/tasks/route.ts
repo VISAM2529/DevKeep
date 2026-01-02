@@ -36,16 +36,33 @@ export async function GET(
         }
 
         const isOwner = project.userId.toString() === session.user.id;
-        const isCollaborator = project.sharedWith.some(
+        const collaborator = project.sharedWith.find(
             (c: any) => c.email === session.user.email?.toLowerCase() && c.accepted === true
         );
 
-        if (!isOwner && !isCollaborator) {
-            return NextResponse.json({ error: "Access denied" }, { status: 403 });
+        // Check if user is Community Admin
+        let isCommunityAdmin = false;
+        if (project.communityId) {
+            const Community = (await import("@/models/Community")).default;
+            const community = await Community.findById(project.communityId);
+            if (community) {
+                isCommunityAdmin = community.members.some(
+                    (m: any) => m.userId.toString() === session.user.id && m.role === "admin"
+                ) || community.ownerId.toString() === session.user.id;
+            }
         }
 
+        const isProjectLeadOrAdmin = isOwner || isCommunityAdmin || (collaborator && (collaborator.role === "Admin" || collaborator.role === "Project Lead"));
+
         // Fetch tasks
-        const tasks = await Task.find({ projectId: id })
+        const query: any = { projectId: id };
+
+        // If not lead/admin, only show assigned tasks
+        if (!isProjectLeadOrAdmin) {
+            query.assigneeId = session.user.id;
+        }
+
+        const tasks = await Task.find(query)
             .populate("assigneeId", "name email image")
             .populate("creatorId", "name")
             .sort({ createdAt: -1 });
@@ -118,6 +135,20 @@ export async function POST(
         });
 
         await task.populate("assigneeId", "name email image");
+
+        // Trigger Notification for Assignee
+        if (parsed.assigneeId && parsed.assigneeId !== session.user.id) {
+            const Notification = (await import("@/models/Notification")).default;
+            await Notification.create({
+                recipientId: parsed.assigneeId,
+                senderId: session.user.id,
+                type: "task_assigned",
+                title: "New Task Assigned",
+                message: `You have been assigned a new task: ${task.title}`,
+                link: `/projects/${id}`,
+                projectId: id,
+            });
+        }
 
         return NextResponse.json(task);
 

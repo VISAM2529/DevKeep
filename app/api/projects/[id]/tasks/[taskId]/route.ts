@@ -77,6 +77,10 @@ export async function PUT(
             updateData.completedAt = null;
         }
 
+        // Check for status change to trigger notification
+        const oldTask = await Task.findById(taskId);
+        const statusChanged = parsed.status && oldTask && oldTask.status !== parsed.status;
+
         const task = await Task.findOneAndUpdate(
             { _id: taskId, projectId: id },
             { $set: updateData },
@@ -85,6 +89,20 @@ export async function PUT(
 
         if (!task) {
             return NextResponse.json({ error: "Task not found" }, { status: 404 });
+        }
+
+        // Trigger Notification for Owner/Admin on status change
+        if (statusChanged && session.user.id !== project.userId.toString()) {
+            const Notification = (await import("@/models/Notification")).default;
+            await Notification.create({
+                recipientId: project.userId,
+                senderId: session.user.id,
+                type: "task_update",
+                title: "Task Status Updated",
+                message: `Task "${task.title}" status changed to ${task.status} by ${session.user.name}`,
+                link: `/projects/${id}`,
+                projectId: id,
+            });
         }
 
         return NextResponse.json(task);

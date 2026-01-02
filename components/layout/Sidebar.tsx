@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useNotifications } from "@/components/providers/NotificationProvider";
+import { NotificationCenter } from "./NotificationCenter";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -48,11 +49,12 @@ export function Sidebar({ onClose }: SidebarProps) {
     return (
         <div className="flex h-full w-[280px] flex-col border-r border-[#1F1F1F] bg-[#0A0A0A] text-[#EDEDED]">
             {/* Logo */}
-            <div className="flex h-[72px] items-center px-6">
+            <div className="flex h-[72px] items-center justify-between px-6">
                 <div className="flex items-center gap-3">
                     <Zap className="h-6 w-6 text-white text-opacity-80 fill-current" />
                     <span className="text-xl font-bold tracking-tight text-white/90">DevKeep</span>
                 </div>
+                <NotificationCenter />
             </div>
 
             {/* Create Button (Triggers Command Palette) */}

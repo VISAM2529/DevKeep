@@ -88,6 +88,13 @@ export async function GET() {
             }
         ]);
 
+        // 6. Get unread general notifications
+        const Notification = (await import("@/models/Notification")).default;
+        const totalNotifications = await Notification.countDocuments({
+            recipientId: userId,
+            read: false
+        });
+
         // Format result
         const projectResults: Record<string, { messages: number; tasks: number; name: string }> = {};
         projects.forEach(p => {
@@ -123,6 +130,7 @@ export async function GET() {
         return NextResponse.json({
             totalProjectsUnread,
             totalCommunitiesUnread,
+            totalNotifications,
             projects: projectResults,
             communities: communityResults
         });

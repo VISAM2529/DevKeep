@@ -54,6 +54,20 @@ export async function POST(
             activeSession.status = "completed";
             await activeSession.save();
 
+            // Trigger Notification for Owner
+            if (session.user.id !== community.ownerId.toString()) {
+                const Notification = (await import("@/models/Notification")).default;
+                await Notification.create({
+                    recipientId: community.ownerId,
+                    senderId: session.user.id,
+                    type: "community_event",
+                    title: "Member Clocked Out",
+                    message: `${session.user.name} clocked out from ${community.name}`,
+                    link: `/communities/${id}`,
+                    communityId: id,
+                });
+            }
+
             return NextResponse.json({
                 action: "clockOut",
                 attendance: activeSession,
@@ -70,6 +84,20 @@ export async function POST(
             });
 
             await newAttendance.populate("userId", "name email image");
+
+            // Trigger Notification for Owner
+            if (session.user.id !== community.ownerId.toString()) {
+                const Notification = (await import("@/models/Notification")).default;
+                await Notification.create({
+                    recipientId: community.ownerId,
+                    senderId: session.user.id,
+                    type: "community_event",
+                    title: "Member Clocked In",
+                    message: `${session.user.name} clocked in to ${community.name}`,
+                    link: `/communities/${id}`,
+                    communityId: id,
+                });
+            }
 
             return NextResponse.json({
                 action: "clockIn",

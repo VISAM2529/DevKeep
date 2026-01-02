@@ -7,6 +7,7 @@ import { showDesktopNotification, requestNotificationPermission } from "@/lib/no
 interface UnreadCounts {
     totalProjectsUnread: number;
     totalCommunitiesUnread: number;
+    totalNotifications: number;
     projects: Record<string, { messages: number; tasks: number; name: string }>;
     communities: Record<string, { messages: number; name: string }>;
 }
@@ -24,6 +25,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const [counts, setCounts] = useState<UnreadCounts>({
         totalProjectsUnread: 0,
         totalCommunitiesUnread: 0,
+        totalNotifications: 0,
         projects: {},
         communities: {}
     });
@@ -72,6 +74,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         });
                     }
                 });
+
+                // 3. Check for new general notifications
+                if (data.totalNotifications > prev.totalNotifications) {
+                    showDesktopNotification("DevKeep Update", {
+                        body: "You have a new activity notification.",
+                        tag: "general-notification"
+                    });
+                }
 
                 setCounts(data);
                 prevCountsRef.current = data;
