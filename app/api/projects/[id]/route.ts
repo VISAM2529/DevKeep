@@ -34,31 +34,41 @@ export async function GET(
         }
 
         const { id } = await params;
+        const userEmail = session.user.email?.toLowerCase() || "";
 
         await connectDB();
 
-        const userEmail = session.user.email?.toLowerCase();
+        const { getProjectAccessLevel } = await import("@/lib/auth");
+        const { hasAccess } = await getProjectAccessLevel(id, session.user.id, userEmail);
 
-        const project = await Project.findOne({
-            _id: id,
-            $or: [
-                { userId: new mongoose.Types.ObjectId(session.user.id) },
-                {
-                    "sharedWith": {
-                        $elemMatch: {
-                            email: userEmail,
-                            accepted: true
-                        }
-                    }
-                }
-            ]
-        }).populate("userId", "email name");
-
-        if (!project) {
+        if (!hasAccess) {
             return NextResponse.json({ error: "Project not found or access denied" }, { status: 404 });
         }
 
-        return NextResponse.json({ project }, { status: 200 });
+        const project = await Project.findById(id).populate("userId", "email name lastSeen");
+
+        if (!project) {
+            return NextResponse.json({ error: "Project not found" }, { status: 404 });
+        }
+
+        // Fetch presence info for collaborators
+        const User = (await import("@/models/User")).default;
+        const collaboratorEmails = project.sharedWith.map((c: any) => c.email);
+        const collaboratorsPresence = await User.find(
+            { email: { $in: collaboratorEmails } },
+            "email lastSeen"
+        );
+
+        const projectObj = project.toObject();
+        projectObj.sharedWith = projectObj.sharedWith.map((c: any) => {
+            const presence = collaboratorsPresence.find(p => p.email === c.email);
+            return {
+                ...c,
+                lastSeen: presence?.lastSeen
+            };
+        });
+
+        return NextResponse.json({ project: projectObj }, { status: 200 });
     } catch (error: any) {
         console.error("Get project error:", error);
         return NextResponse.json(

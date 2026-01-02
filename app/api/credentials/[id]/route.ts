@@ -40,28 +40,15 @@ export async function GET(
 
         // Check ownership
         const isOwner = credential.userId.toString() === session.user.id;
-        let isCollaborator = false;
+        let hasProjectAccessFlag = false;
 
         if (!isOwner && credential.projectId) {
-            // Check project collaboration or ownership
-            const project = await Project.findOne({
-                _id: credential.projectId,
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            });
-            if (project) isCollaborator = true;
+            const { getProjectAccessLevel } = await import("@/lib/auth");
+            const { hasAccess } = await getProjectAccessLevel(credential.projectId.toString(), session.user.id, session.user.email?.toLowerCase() || "");
+            if (hasAccess) hasProjectAccessFlag = true;
         }
 
-        if (!isOwner && !isCollaborator) {
+        if (!isOwner && !hasProjectAccessFlag) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
@@ -108,27 +95,15 @@ export async function PUT(
 
         // Check ownership or collaboration
         const isOwner = credential.userId.toString() === session.user.id;
-        let isCollaborator = false;
+        let hasProjectAccessFlag = false;
 
         if (!isOwner && credential.projectId) {
-            const project = await Project.findOne({
-                _id: credential.projectId,
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            });
-            if (project) isCollaborator = true;
+            const { getProjectAccessLevel } = await import("@/lib/auth");
+            const { hasAccess } = await getProjectAccessLevel(credential.projectId.toString(), session.user.id, session.user.email?.toLowerCase() || "");
+            if (hasAccess) hasProjectAccessFlag = true;
         }
 
-        if (!isOwner && !isCollaborator) {
+        if (!isOwner && !hasProjectAccessFlag) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
@@ -186,27 +161,15 @@ export async function DELETE(
 
         // Check ownership or collaboration
         const isOwner = credential.userId.toString() === session.user.id;
-        let isCollaborator = false;
+        let hasProjectAccessFlag = false;
 
         if (!isOwner && credential.projectId) {
-            const project = await Project.findOne({
-                _id: credential.projectId,
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            });
-            if (project) isCollaborator = true;
+            const { getProjectAccessLevel } = await import("@/lib/auth");
+            const { hasAccess } = await getProjectAccessLevel(credential.projectId.toString(), session.user.id, session.user.email?.toLowerCase() || "");
+            if (hasAccess) hasProjectAccessFlag = true;
         }
 
-        if (!isOwner && !isCollaborator) {
+        if (!isOwner && !hasProjectAccessFlag) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 

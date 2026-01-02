@@ -10,6 +10,7 @@ export interface IUser extends Document {
     provider?: "credentials" | "google";
     createdAt: Date;
     updatedAt: Date;
+    lastSeen: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -43,6 +44,10 @@ const UserSchema = new Schema<IUser>(
             type: String,
             enum: ["credentials", "google"],
             default: "credentials",
+        },
+        lastSeen: {
+            type: Date,
+            default: Date.now,
         },
     },
     {

@@ -53,9 +53,9 @@ export async function PUT(
             }
         }
 
-        // Allow Owner, Admin, Project Lead, or Community Admin to manage tasks
+        // Allow Owner, Admin, Project Lead, Community Admin, or Collaborator (Member) to manage tasks
         const hasTaskManagementPrivileges = isOwner || isCommunityAdmin ||
-            (collaborator && (collaborator.role === "Admin" || collaborator.role === "Project Lead"));
+            (collaborator && (collaborator.role === "Admin" || collaborator.role === "Project Lead" || collaborator.role === "Collaborator"));
 
         if (!hasTaskManagementPrivileges) {
             return NextResponse.json({

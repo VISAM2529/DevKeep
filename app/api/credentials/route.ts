@@ -27,46 +27,25 @@ export async function GET(req: NextRequest) {
 
         const { searchParams } = new URL(req.url);
         const projectId = searchParams.get("projectId");
+        const userEmail = session.user.email?.toLowerCase() || "";
 
         await connectDB();
 
         let query: any;
+        const { getProjectAccessFilter, getProjectAccessLevel } = await import("@/lib/auth");
+
         if (projectId) {
             // Verify project access
-            const project = await Project.findOne({
-                _id: projectId,
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            });
+            const { hasAccess } = await getProjectAccessLevel(projectId, session.user.id, userEmail);
 
-            if (!project) {
+            if (!hasAccess) {
                 return NextResponse.json({ error: "Project access denied" }, { status: 403 });
             }
             query = { projectId };
         } else {
-            // Get accessible projects to find shared credentials
-            const accessibleProjects = await Project.find({
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            }).select("_id");
+            // Get unified access filter for projects
+            const accessFilter = await getProjectAccessFilter(session.user.id, userEmail);
+            const accessibleProjects = await Project.find(accessFilter).select("_id");
             const projectIds = accessibleProjects.map((p: any) => p._id);
 
             query = {

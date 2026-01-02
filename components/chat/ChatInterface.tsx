@@ -17,6 +17,7 @@ interface Message {
         _id: string;
         name: string;
         image?: string;
+        lastSeen?: string;
     };
     readBy: {
         userId: { _id: string; name: string };
@@ -162,17 +163,29 @@ export function ChatInterface({ communityId, projectId }: ChatInterfaceProps) {
                             const isSeen = readers.length > 0;
                             const seenByNames = readers.map((r: any) => r.userId.name).join(", ");
 
+                            const isActive = (lastSeen?: string) => {
+                                if (!lastSeen) return false;
+                                const lastSeenDate = new Date(lastSeen);
+                                const now = new Date();
+                                return now.getTime() - lastSeenDate.getTime() < 5 * 60 * 1000;
+                            };
+
                             return (
                                 <div
                                     key={msg._id}
                                     className={`flex items-start gap-3 ${isMe ? "flex-row-reverse" : ""}`}
                                 >
-                                    <Avatar className="h-8 w-8 border border-border/40">
-                                        <AvatarImage src={msg.senderId.image} />
-                                        <AvatarFallback className="text-[10px]">
-                                            {getInitials(msg.senderId.name)}
-                                        </AvatarFallback>
-                                    </Avatar>
+                                    <div className="relative">
+                                        <Avatar className="h-8 w-8 border border-border/40">
+                                            <AvatarImage src={msg.senderId.image} />
+                                            <AvatarFallback className="text-[10px]">
+                                                {getInitials(msg.senderId.name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        {isActive(msg.senderId.lastSeen) && (
+                                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card pulse-dot shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                                        )}
+                                    </div>
                                     <div
                                         className={`flex flex-col max-w-[85%] md:max-w-[80%] ${isMe ? "items-end" : "items-start"
                                             }`}

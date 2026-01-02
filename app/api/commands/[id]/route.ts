@@ -39,27 +39,15 @@ export async function GET(
 
         // Check ownership or collaboration
         const isOwner = command.userId.toString() === session.user.id;
-        let isCollaborator = false;
+        let hasProjectAccessFlag = false;
 
         if (!isOwner && command.projectId) {
-            const project = await Project.findOne({
-                _id: command.projectId,
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            });
-            if (project) isCollaborator = true;
+            const { getProjectAccessLevel } = await import("@/lib/auth");
+            const { hasAccess } = await getProjectAccessLevel(command.projectId.toString(), session.user.id, session.user.email?.toLowerCase() || "");
+            if (hasAccess) hasProjectAccessFlag = true;
         }
 
-        if (!isOwner && !isCollaborator) {
+        if (!isOwner && !hasProjectAccessFlag) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
@@ -98,27 +86,15 @@ export async function PUT(
 
         // Check ownership or collaboration
         const isOwner = command.userId.toString() === session.user.id;
-        let isCollaborator = false;
+        let hasProjectAccessFlag = false;
 
         if (!isOwner && command.projectId) {
-            const project = await Project.findOne({
-                _id: command.projectId,
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            });
-            if (project) isCollaborator = true;
+            const { getProjectAccessLevel } = await import("@/lib/auth");
+            const { hasAccess } = await getProjectAccessLevel(command.projectId.toString(), session.user.id, session.user.email?.toLowerCase() || "");
+            if (hasAccess) hasProjectAccessFlag = true;
         }
 
-        if (!isOwner && !isCollaborator) {
+        if (!isOwner && !hasProjectAccessFlag) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
@@ -165,27 +141,15 @@ export async function DELETE(
 
         // Check ownership or collaboration
         const isOwner = command.userId.toString() === session.user.id;
-        let isCollaborator = false;
+        let hasProjectAccessFlag = false;
 
         if (!isOwner && command.projectId) {
-            const project = await Project.findOne({
-                _id: command.projectId,
-                $or: [
-                    { userId: session.user.id },
-                    {
-                        "sharedWith": {
-                            $elemMatch: {
-                                email: session.user.email?.toLowerCase(),
-                                accepted: true
-                            }
-                        }
-                    }
-                ]
-            });
-            if (project) isCollaborator = true;
+            const { getProjectAccessLevel } = await import("@/lib/auth");
+            const { hasAccess } = await getProjectAccessLevel(command.projectId.toString(), session.user.id, session.user.email?.toLowerCase() || "");
+            if (hasAccess) hasProjectAccessFlag = true;
         }
 
-        if (!isOwner && !isCollaborator) {
+        if (!isOwner && !hasProjectAccessFlag) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 

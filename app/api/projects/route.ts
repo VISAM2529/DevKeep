@@ -33,37 +33,32 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const status = searchParams.get("status");
         const environment = searchParams.get("environment");
-        const communityId = searchParams.get("communityId");
-        const userEmail = session.user.email?.toLowerCase();
+        const communityIdQuery = searchParams.get("communityId");
+        const userEmail = session.user.email?.toLowerCase() || "";
 
         // Build base query filters
         const filters: any = {};
         if (status) filters.status = status;
         if (environment) filters.environment = environment;
-        if (communityId) filters.communityId = communityId;
+        if (communityIdQuery) filters.communityId = communityIdQuery;
 
-        // 1. Owned projects
-        const ownedProjects = await Project.find({
-            userId: new mongoose.Types.ObjectId(session.user.id),
+        // Get unified access filter
+        const { getProjectAccessFilter } = await import("@/lib/auth");
+        const accessFilter = await getProjectAccessFilter(session.user.id, userEmail);
+
+        // 1. All accessible projects (Owned, Shared, Inherited)
+        const allAccessibleProjects = await Project.find({
+            ...accessFilter,
             ...filters
         })
             .populate("userId", "email name")
             .sort({ createdAt: -1 });
 
-        // 2. Accepted shared projects
-        const sharedProjects = await Project.find({
-            "sharedWith": {
-                $elemMatch: {
-                    email: userEmail,
-                    accepted: true
-                }
-            },
-            ...filters
-        })
-            .populate("userId", "email name")
-            .sort({ createdAt: -1 });
+        // Split for frontend categorization if needed, though they can be combined
+        const ownedProjects = allAccessibleProjects.filter(p => p.userId._id.toString() === session.user.id);
+        const sharedProjects = allAccessibleProjects.filter(p => p.userId._id.toString() !== session.user.id);
 
-        // 3. Pending invitations
+        // 3. Pending invitations (Still need explicit query as they aren't "accessible" yet)
         const pendingInvitations = await Project.find({
             "sharedWith": {
                 $elemMatch: {
@@ -80,8 +75,7 @@ export async function GET(req: NextRequest) {
             ownedProjects,
             sharedProjects,
             pendingInvitations,
-            // For backward compatibility, combine owned and shared
-            projects: [...ownedProjects, ...sharedProjects]
+            projects: allAccessibleProjects
         }, { status: 200 });
     } catch (error: any) {
         console.error("Get projects error:", error);

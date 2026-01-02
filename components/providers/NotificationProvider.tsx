@@ -85,6 +85,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
                 setCounts(data);
                 prevCountsRef.current = data;
+
+                // Send heartbeat pulse
+                fetch("/api/user/pulse", { method: "POST" }).catch(err => console.error("Pulse failed", err));
             }
         } catch (error) {
             console.error("Failed to fetch unread notifications", error);

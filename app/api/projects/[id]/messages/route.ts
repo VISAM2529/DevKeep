@@ -40,7 +40,7 @@ export async function GET(
         }
 
         const messages = await Message.find({ projectId: id })
-            .populate("senderId", "name email image")
+            .populate("senderId", "name email image lastSeen")
             .populate("readBy.userId", "name")
             .sort({ createdAt: 1 })
             .limit(100);
@@ -107,7 +107,7 @@ export async function POST(
         });
 
         // Populate sender info for immediate display
-        await message.populate("senderId", "name email image");
+        await message.populate("senderId", "name email image lastSeen");
 
         const responseMsg = message.toObject();
         responseMsg.content = content; // Return plain text to original sender

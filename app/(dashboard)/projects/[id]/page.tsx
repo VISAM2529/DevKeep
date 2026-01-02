@@ -22,6 +22,8 @@ import {
     Users,
     MessageSquare,
     LayoutList,
+    Paperclip,
+    Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
@@ -55,6 +57,56 @@ export default function ProjectDetailPage() {
     const [isResourceDialogOpen, setIsResourceDialogOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [selectedResource, setSelectedResource] = useState<any>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const handleNoteUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !params.id) return;
+
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            // 1. Upload to Cloudinary
+            const uploadRes = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!uploadRes.ok) throw new Error("Upload failed");
+            const { url } = await uploadRes.json();
+
+            // 2. Create Project-specific Note
+            const noteRes = await fetch("/api/notes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: file.name.split('.')[0],
+                    content: `Technical document for project: **${project.name}**\n\nImported from: **${file.name}**`,
+                    attachments: [url],
+                    projectId: params.id,
+                    isGlobal: false
+                }),
+            });
+
+            if (!noteRes.ok) throw new Error("Failed to create project note");
+
+            toast({
+                title: "Document Added",
+                description: `Successfully attached ${file.name} to this project.`,
+            });
+            fetchData(); // Refresh notes list
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Upload Error",
+                description: error.message,
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -268,50 +320,71 @@ export default function ProjectDetailPage() {
                         </TabsTrigger>
                     </TabsList>
 
-                    <Dialog open={isResourceDialogOpen} onOpenChange={(open) => {
-                        setIsResourceDialogOpen(open);
-                        if (!open) setSelectedResource(null);
-                    }}>
-                        <Button
-                            size="sm"
-                            className="h-9 gap-2"
-                            onClick={() => {
-                                if (activeTab === 'notes') {
-                                    router.push(`/notes/new?projectId=${params.id}`);
-                                } else {
-                                    setIsResourceDialogOpen(true);
-                                }
-                            }}
-                        >
-                            <Plus className="h-3.5 w-3.5" />
-                            Add Item
-                        </Button>
-                        <DialogContent className="sm:max-w-[600px]">
-                            <DialogHeader>
-                                <DialogTitle>
-                                    {selectedResource ? "Edit" : "New"} {activeTab === 'credentials' ? 'Credential' : activeTab === 'commands' ? 'Command' : 'Item'}
-                                </DialogTitle>
-                                <DialogDescription>
-                                    {activeTab === 'credentials' && "Securely store a new credential for this project."}
-                                    {activeTab === 'commands' && "Save a useful command snippet for this project."}
-                                </DialogDescription>
-                            </DialogHeader>
-                            {activeTab === 'credentials' && (
-                                <CredentialForm
-                                    initialData={selectedResource || { projectId: params.id }}
-                                    projects={[project]}
-                                    onSuccess={handleSuccess}
+                    <div className="flex items-center gap-2">
+                        {activeTab === 'notes' && (
+                            <div className="relative">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 gap-2"
+                                    disabled={uploading}
+                                >
+                                    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                                    Upload Doc
+                                </Button>
+                                <input
+                                    type="file"
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    onChange={handleNoteUpload}
+                                    accept=".doc,.docx,.xls,.xlsx,.pdf"
                                 />
-                            )}
-                            {activeTab === 'commands' && (
-                                <CommandForm
-                                    initialData={selectedResource || { projectId: params.id }}
-                                    projects={[project]}
-                                    onSuccess={handleSuccess}
-                                />
-                            )}
-                        </DialogContent>
-                    </Dialog>
+                            </div>
+                        )}
+                        <Dialog open={isResourceDialogOpen} onOpenChange={(open) => {
+                            setIsResourceDialogOpen(open);
+                            if (!open) setSelectedResource(null);
+                        }}>
+                            <Button
+                                size="sm"
+                                className="h-9 gap-2"
+                                onClick={() => {
+                                    if (activeTab === 'notes') {
+                                        router.push(`/notes/new?projectId=${params.id}`);
+                                    } else {
+                                        setIsResourceDialogOpen(true);
+                                    }
+                                }}
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                Add Item
+                            </Button>
+                            <DialogContent className="sm:max-w-[600px]">
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        {selectedResource ? "Edit" : "New"} {activeTab === 'credentials' ? 'Credential' : activeTab === 'commands' ? 'Command' : 'Item'}
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        {activeTab === 'credentials' && "Securely store a new credential for this project."}
+                                        {activeTab === 'commands' && "Save a useful command snippet for this project."}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                {activeTab === 'credentials' && (
+                                    <CredentialForm
+                                        initialData={selectedResource || { projectId: params.id }}
+                                        projects={[project]}
+                                        onSuccess={handleSuccess}
+                                    />
+                                )}
+                                {activeTab === 'commands' && (
+                                    <CommandForm
+                                        initialData={selectedResource || { projectId: params.id }}
+                                        projects={[project]}
+                                        onSuccess={handleSuccess}
+                                    />
+                                )}
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                 </div>
 
                 <TabsContent value="credentials" className="mt-0 space-y-4">

@@ -13,7 +13,9 @@ import {
     Calendar,
     LayoutGrid,
     List,
-    Trash2
+    Trash2,
+    Loader2,
+    Paperclip,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,54 @@ export default function NotesPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [noteToDelete, setNoteToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [uploading, setUploading] = useState(false);
+
+    const handleQuickUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const uploadRes = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!uploadRes.ok) throw new Error("Upload failed");
+            const { url } = await uploadRes.json();
+
+            // Create a note from the document
+            const noteRes = await fetch("/api/notes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: file.name.split('.')[0], // Use filename as title
+                    content: `Document note imported from: **${file.name}**`,
+                    attachments: [url],
+                    isGlobal: true
+                }),
+            });
+
+            if (!noteRes.ok) throw new Error("Failed to create note");
+
+            toast({
+                title: "Document Imported",
+                description: `Successfully created note from ${file.name}.`,
+            });
+            fetchNotes(); // Refresh list
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Import Error",
+                description: error.message,
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const fetchNotes = async () => {
         try {
@@ -90,12 +140,26 @@ export default function NotesPage() {
                     </p>
                 </div>
 
-                <Link href="/notes/new" className="w-full md:w-auto">
-                    <Button className="w-full h-10 px-4 gap-2 text-sm font-medium">
-                        <Plus className="h-4 w-4" />
-                        Draft Note
-                    </Button>
-                </Link>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative">
+                        <Button variant="outline" className="w-full md:w-auto h-10 px-4 gap-2 text-sm font-medium" disabled={uploading}>
+                            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                            Upload Doc
+                        </Button>
+                        <input
+                            type="file"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            onChange={handleQuickUpload}
+                            accept=".doc,.docx,.xls,.xlsx,.pdf"
+                        />
+                    </div>
+                    <Link href="/notes/new" className="flex-1 md:flex-none">
+                        <Button className="w-full h-10 px-4 gap-2 text-sm font-medium">
+                            <Plus className="h-4 w-4" />
+                            Draft Note
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             {/* Utility Bar */}

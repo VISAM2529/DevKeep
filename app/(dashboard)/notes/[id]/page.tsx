@@ -12,6 +12,13 @@ import {
     Trash2,
     Loader2,
     FileText,
+    Paperclip,
+    File,
+    X,
+    Plus,
+    ExternalLink,
+    RefreshCcw,
+    Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -30,9 +37,12 @@ export default function NoteEditorPage() {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [projectId, setProjectId] = useState(searchParams.get("projectId") || "");
+    const [attachments, setAttachments] = useState<string[]>([]);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [viewerType, setViewerType] = useState<'google' | 'office'>('google');
 
     const isNew = params.id === "new";
 
@@ -53,6 +63,7 @@ export default function NoteEditorPage() {
                     setTitle(note.title || "");
                     setContent(note.content || "");
                     setProjectId(note.projectId || "");
+                    setAttachments(note.attachments || []);
                 }
             } catch (error) {
                 toast({
@@ -67,6 +78,39 @@ export default function NoteEditorPage() {
 
         fetchData();
     }, [params.id, isNew, toast]);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Upload failed");
+
+            const data = await res.json();
+            setAttachments((prev) => [...prev, data.url]);
+            toast({
+                title: "File Uploaded",
+                description: `Successfully uploaded ${file.name}.`,
+            });
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Upload Error",
+                description: error.message,
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleSave = async () => {
         if (!title.trim() || !content.trim()) {
@@ -86,7 +130,7 @@ export default function NoteEditorPage() {
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content, projectId }),
+                body: JSON.stringify({ title, content, projectId, attachments }),
             });
 
             if (!res.ok) throw new Error("Commit failure");
@@ -210,6 +254,140 @@ export default function NoteEditorPage() {
                             </Select>
                         </div>
                     </div>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Paperclip className="h-4 w-4" />
+                                Attachments
+                            </label>
+                            <div className="relative">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-2"
+                                    disabled={uploading}
+                                    onClick={() => document.getElementById('file-upload')?.click()}
+                                >
+                                    {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                                    Add Document
+                                </Button>
+                                <input
+                                    id="file-upload"
+                                    type="file"
+                                    className="hidden"
+                                    onChange={handleFileUpload}
+                                    accept=".doc,.docx,.xls,.xlsx,.pdf"
+                                />
+                            </div>
+                        </div>
+
+                        {attachments.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {attachments.map((url, index) => {
+                                    const fileName = url.split('/').pop() || 'Attachment';
+                                    const isExcel = url.toLowerCase().includes('.xls') || url.toLowerCase().includes('.xlsx');
+                                    const isWord = url.toLowerCase().includes('.doc') || url.toLowerCase().includes('.docx');
+
+                                    return (
+                                        <div key={index} className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-secondary/20 group">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`h-8 w-8 rounded flex items-center justify-center shrink-0 ${isExcel ? 'bg-green-500/10 text-green-500' : isWord ? 'bg-blue-500/10 text-blue-500' : 'bg-secondary/50 text-muted-foreground'}`}>
+                                                    <File className="h-4 w-4" />
+                                                </div>
+                                                <a
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs font-medium text-white truncate hover:underline"
+                                                >
+                                                    {fileName}
+                                                </a>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {attachments.length > 0 && (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                    <FileText className="h-4 w-4" />
+                                    Document Preview
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 text-[10px] gap-1.5"
+                                        onClick={() => setViewerType(prev => prev === 'google' ? 'office' : 'google')}
+                                    >
+                                        <RefreshCcw className="h-3 w-3" />
+                                        Switch Engine ({viewerType === 'google' ? 'Microsoft' : 'Google'})
+                                    </Button>
+                                    <a
+                                        href={attachments[0]}
+                                        download
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary/50 border border-white/5 text-[10px] font-medium text-white hover:bg-secondary/70 transition-colors"
+                                    >
+                                        <Download className="h-3 w-3" />
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl border border-white/5 bg-secondary/10 overflow-hidden h-[650px] w-full relative group">
+                                {(() => {
+                                    const url = attachments[0];
+                                    const isPDF = url.toLowerCase().includes('.pdf');
+
+                                    if (isPDF) {
+                                        return (
+                                            <iframe
+                                                src={url}
+                                                className="w-full h-full border-none"
+                                                title="PDF Preview"
+                                            />
+                                        );
+                                    }
+
+                                    const googleUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+                                    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+
+                                    return (
+                                        <iframe
+                                            src={viewerType === 'google' ? googleUrl : officeUrl}
+                                            className="w-full h-full border-none"
+                                            title="Document Preview"
+                                        />
+                                    );
+                                })()}
+                                <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a
+                                        href={attachments[0]}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-medium text-white hover:bg-black transition-colors"
+                                    >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Open Original
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground">Content</label>

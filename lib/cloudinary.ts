@@ -10,9 +10,9 @@ cloudinary.config({
 export default cloudinary;
 
 /**
- * Upload image to Cloudinary
+ * Upload file to Cloudinary
  */
-export async function uploadImage(
+export async function uploadFile(
     file: File,
     folder: string = "devkeep"
 ): Promise<string> {
@@ -36,7 +36,7 @@ export async function uploadImage(
         });
     } catch (error) {
         console.error("Cloudinary upload error:", error);
-        throw new Error("Failed to upload image");
+        throw new Error("Failed to upload file");
     }
 }
 

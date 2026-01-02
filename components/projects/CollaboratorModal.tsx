@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, X, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
 import {
     Select,
     SelectContent,
@@ -168,38 +170,60 @@ export function CollaboratorModal({
                                 <p>No active collaborators.</p>
                             </div>
                         )}
-                        {collaborators.map((collab) => (
-                            <div
-                                key={collab.email}
-                                className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-secondary/20 transition-colors"
-                            >
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-sm font-medium">
-                                        {collab.email}
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                        <Badge variant="secondary" className="text-xs font-normal">
-                                            {collab.role}
-                                        </Badge>
-                                        {!collab.accepted && (
-                                            <Badge variant="outline" className="text-xs font-normal text-yellow-500 border-yellow-500/20 bg-yellow-500/10">
-                                                Pending
-                                            </Badge>
-                                        )}
+                        {collaborators.map((collab) => {
+                            const isActive = (lastSeen?: string) => {
+                                if (!lastSeen) return false;
+                                const lastSeenDate = new Date(lastSeen);
+                                const now = new Date();
+                                return now.getTime() - lastSeenDate.getTime() < 5 * 60 * 1000;
+                            };
+
+                            return (
+                                <div
+                                    key={collab.email}
+                                    className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-secondary/20 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <Avatar className="h-8 w-8 border border-border/40">
+                                                <AvatarImage src={collab.image} />
+                                                <AvatarFallback className="text-[10px]">
+                                                    {getInitials(collab.name || collab.email)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            {isActive(collab.lastSeen) && (
+                                                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card pulse-dot shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-sm font-medium">
+                                                {collab.email}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="secondary" className="text-xs font-normal">
+                                                    {collab.role}
+                                                </Badge>
+                                                {!collab.accepted && (
+                                                    <Badge variant="outline" className="text-xs font-normal text-yellow-500 border-yellow-500/20 bg-yellow-500/10">
+                                                        Pending
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
+                                    {isOwner && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleRemove(collab.email)}
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                 </div>
-                                {isOwner && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleRemove(collab.email)}
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                )}
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </DialogContent>
