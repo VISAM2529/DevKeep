@@ -4,11 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Settings, Users, UserPlus, Video, MessageSquare, FileText } from "lucide-react";
+import { ArrowLeft, Plus, Settings, Users, UserPlus, Video, MessageSquare, FileText, LayoutGrid, List } from "lucide-react";
 import VideoConferenceComponent from "@/components/VideoConference";
 import { MeetingNotesPanel } from "@/components/meeting/MeetingNotesPanel";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { ProjectTable } from "@/components/projects/ProjectTable";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -28,7 +29,8 @@ export default function CommunityDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
     const [isMeeting, setIsMeeting] = useState(false);
-    const [activeMeetingTab, setActiveMeetingTab] = useState<'none' | 'notes' | 'chat'>('none');
+    const [view, setView] = useState<"grid" | "table">("grid");
+    const [activeMeetingTab, setActiveMeetingTab] = useState<'none' | 'chat' | 'notes'>('none');
 
     const fetchDetails = useCallback(async () => {
         try {
@@ -209,20 +211,44 @@ export default function CommunityDetailPage() {
                     <TabsContent value="projects" className="space-y-6 outline-none">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-medium">Community Projects</h3>
-                            <Link href={`/projects/new?communityId=${community._id}`}>
-                                <Button size="sm" className="gap-2">
-                                    <Plus className="h-4 w-4" />
-                                    Add Project
-                                </Button>
-                            </Link>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center bg-secondary/20 rounded-lg p-1 border border-white/5">
+                                    <Button
+                                        variant={view === "grid" ? "secondary" : "ghost"}
+                                        size="icon"
+                                        className="h-8 w-8 rounded-md"
+                                        onClick={() => setView("grid")}
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant={view === "table" ? "secondary" : "ghost"}
+                                        size="icon"
+                                        className="h-8 w-8 rounded-md"
+                                        onClick={() => setView("table")}
+                                    >
+                                        <List className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <Link href={`/projects/new?communityId=${community._id}`}>
+                                    <Button size="sm" className="gap-2">
+                                        <Plus className="h-4 w-4" />
+                                        Add Project
+                                    </Button>
+                                </Link>
+                            </div>
                         </div>
 
                         {projects.length > 0 ? (
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {projects.map((project) => (
-                                    <ProjectCard key={project._id} project={project} />
-                                ))}
-                            </div>
+                            view === "grid" ? (
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {projects.map((project) => (
+                                        <ProjectCard key={project._id} project={project} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <ProjectTable projects={projects} />
+                            )
                         ) : (
                             <div className="text-center py-12 border border-dashed border-border/40 rounded-xl bg-card/30">
                                 <p className="text-muted-foreground">No projects in this community yet.</p>

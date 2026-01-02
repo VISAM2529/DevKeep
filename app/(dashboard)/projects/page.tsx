@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { ProjectTable } from "@/components/projects/ProjectTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, FolderKanban } from "lucide-react";
+import { Plus, Search, FolderKanban, LayoutGrid, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
 import { InvitationCard } from "@/components/projects/InvitationCard";
@@ -17,6 +18,7 @@ export default function ProjectsPage() {
     const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [view, setView] = useState<"grid" | "table">("grid");
 
     const fetchProjects = async () => {
         try {
@@ -86,14 +88,34 @@ export default function ProjectsPage() {
             </div>
 
             {/* Search and Filters */}
-            <div className="relative group max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search by name or tech stack..."
-                    className="pl-10 bg-secondary/20 border-white/5"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            <div className="flex items-center gap-4">
+                <div className="relative group flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by name or tech stack..."
+                        className="pl-10 bg-secondary/20 border-white/5"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <div className="flex items-center bg-secondary/20 rounded-lg p-1 border border-white/5">
+                    <Button
+                        variant={view === "grid" ? "secondary" : "ghost"}
+                        size="icon"
+                        className="h-8 w-8 rounded-md"
+                        onClick={() => setView("grid")}
+                    >
+                        <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant={view === "table" ? "secondary" : "ghost"}
+                        size="icon"
+                        className="h-8 w-8 rounded-md"
+                        onClick={() => setView("table")}
+                    >
+                        <List className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
 
             {/* Pending Invitations Section */}
@@ -125,16 +147,24 @@ export default function ProjectsPage() {
                     ))}
                 </div>
             ) : filteredProjects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProjects.map((project) => (
-                        <ProjectCard
-                            key={project._id}
-                            project={project}
-                            onDelete={handleDelete}
-                            currentUserId={session?.user?.id}
-                        />
-                    ))}
-                </div>
+                view === "grid" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredProjects.map((project) => (
+                            <ProjectCard
+                                key={project._id}
+                                project={project}
+                                onDelete={handleDelete}
+                                currentUserId={session?.user?.id}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <ProjectTable
+                        projects={filteredProjects}
+                        onDelete={handleDelete}
+                        currentUserId={session?.user?.id}
+                    />
+                )
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
                     <div className="h-16 w-16 rounded-xl bg-white/5 flex items-center justify-center mb-6">
