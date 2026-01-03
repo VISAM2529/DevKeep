@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Project from "@/models/Project";
 import Credential from "@/models/Credential";
@@ -18,20 +18,28 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
 
-        const userEmail = session.user.email?.toLowerCase();
+        const { searchParams } = new URL(req.url);
+        const hiddenQuery = searchParams.get("hidden");
+        const isHiddenFilter = hiddenQuery === "true" ? true : { $ne: true };
+        const userEmail = session.user.email?.toLowerCase(); // Restore userEmail
 
         // 1. Get all accessible projects (owned or accepted shared)
         const accessibleProjects = await Project.find({
-            $or: [
-                { userId: session.user.id },
+            $and: [
                 {
-                    "sharedWith": {
-                        $elemMatch: {
-                            email: userEmail,
-                            accepted: true
+                    $or: [
+                        { userId: session.user.id },
+                        {
+                            "sharedWith": {
+                                $elemMatch: {
+                                    email: userEmail,
+                                    accepted: true
+                                }
+                            }
                         }
-                    }
-                }
+                    ]
+                },
+                { isHidden: isHiddenFilter }
             ]
         }).select("_id");
 
@@ -48,41 +56,71 @@ export async function GET(req: NextRequest) {
         });
 
         // 3. Get counts
+        // 3. Get counts
         const [projectCount, credentialCount, commandCount, noteCount] = await Promise.all([
-            Project.countDocuments({ _id: { $in: projectIds }, status: "Active" }),
+            Project.countDocuments({
+                _id: { $in: projectIds },
+                status: "Active",
+                isHidden: isHiddenFilter
+            }),
             Credential.countDocuments({
-                $or: [
-                    { userId: session.user.id },
-                    { projectId: { $in: projectIds } }
+                $and: [
+                    {
+                        $or: [
+                            { userId: session.user.id },
+                            { projectId: { $in: projectIds } }
+                        ]
+                    },
+                    { isHidden: isHiddenFilter }
                 ]
             }),
             Command.countDocuments({
-                $or: [
-                    { userId: session.user.id },
-                    { projectId: { $in: projectIds } }
+                $and: [
+                    {
+                        $or: [
+                            { userId: session.user.id },
+                            { projectId: { $in: projectIds } }
+                        ]
+                    },
+                    { isHidden: isHiddenFilter }
                 ]
             }),
             Note.countDocuments({
-                $or: [
-                    { userId: session.user.id },
-                    { projectId: { $in: projectIds } }
+                $and: [
+                    {
+                        $or: [
+                            { userId: session.user.id },
+                            { projectId: { $in: projectIds } }
+                        ]
+                    },
+                    { isHidden: isHiddenFilter }
                 ]
             }),
         ]);
 
         // 3. Get recent items
         const [recentProjects, recentCommands, recentNotes] = await Promise.all([
-            Project.find({ _id: { $in: projectIds } }).sort({ updatedAt: -1 }).limit(5).select("name updatedAt"),
+            Project.find({ _id: { $in: projectIds }, isHidden: isHiddenFilter }).sort({ updatedAt: -1 }).limit(5).select("name updatedAt"),
             Command.find({
-                $or: [
-                    { userId: session.user.id },
-                    { projectId: { $in: projectIds } }
+                $and: [
+                    {
+                        $or: [
+                            { userId: session.user.id },
+                            { projectId: { $in: projectIds } }
+                        ]
+                    },
+                    { isHidden: isHiddenFilter }
                 ]
             }).sort({ updatedAt: -1 }).limit(5).select("title updatedAt"),
             Note.find({
-                $or: [
-                    { userId: session.user.id },
-                    { projectId: { $in: projectIds } }
+                $and: [
+                    {
+                        $or: [
+                            { userId: session.user.id },
+                            { projectId: { $in: projectIds } }
+                        ]
+                    },
+                    { isHidden: isHiddenFilter }
                 ]
             }).sort({ updatedAt: -1 }).limit(5).select("title updatedAt"),
         ]);
@@ -112,3 +150,4 @@ export async function GET(req: NextRequest) {
         );
     }
 }
+

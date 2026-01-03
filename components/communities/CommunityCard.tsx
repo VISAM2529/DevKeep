@@ -9,6 +9,8 @@ import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/components/providers/NotificationProvider";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
+import { cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useSession } from "next-auth/react";
 import {
@@ -42,6 +44,7 @@ export function CommunityCard({ community, onDelete }: CommunityCardProps) {
     const { toast } = useToast();
     const { data: session } = useSession();
     const { counts } = useNotifications();
+    const { isHiddenMode } = useHiddenSpace();
     const communityUnread = counts.communities[community._id] || { messages: 0 };
 
     const [isActive, setIsActive] = useState(false);
@@ -135,7 +138,12 @@ export function CommunityCard({ community, onDelete }: CommunityCardProps) {
     };
 
     return (
-        <Card className="group relative overflow-hidden transition-all hover:bg-secondary/20 border-border/40 bg-card p-6 rounded-xl flex flex-col h-full">
+        <Card className={cn(
+            "group relative overflow-hidden transition-all p-6 rounded-xl flex flex-col h-full",
+            isHiddenMode
+                ? "bg-black/40 border-purple-500/20 hover:border-purple-500/50 hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]"
+                : "hover:bg-secondary/20 border-border/40 bg-card"
+        )}>
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-primary/10 p-2.5">

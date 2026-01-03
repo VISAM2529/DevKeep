@@ -6,9 +6,11 @@ export interface ICommunity extends Document {
     ownerId: mongoose.Types.ObjectId;
     members: {
         userId: mongoose.Types.ObjectId;
-        role: "admin" | "member";
+        role: "admin" | "moderator" | "member";
         joinedAt: Date;
+        accepted: boolean;
     }[];
+    isHidden: boolean;
     icon?: string;
     isMeetingActive: boolean;
     activeMeetingId?: string;
@@ -39,8 +41,14 @@ const CommunitySchema = new Schema<ICommunity>(
                 userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
                 role: { type: String, enum: ["admin", "member"], default: "member" },
                 joinedAt: { type: Date, default: Date.now },
+                accepted: { type: Boolean, default: false },
             },
         ],
+        isHidden: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
         icon: {
             type: String,
         },

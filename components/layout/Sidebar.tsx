@@ -18,11 +18,14 @@ import {
     ChevronRight,
     Plus,
     Zap,
-    Users
+    Users,
+    CreditCard,
+    ShieldCheck
 } from "lucide-react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useNotifications } from "@/components/providers/NotificationProvider";
 import { NotificationCenter } from "./NotificationCenter";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -31,6 +34,7 @@ const navigation = [
     { name: "Identity Vault", href: "/credentials", icon: Lock },
     { name: "Snippets", href: "/commands", icon: Terminal },
     { name: "Documentation", href: "/notes", icon: FileText },
+    { name: "Subscription", href: "/subscription", icon: CreditCard },
 ] as const;
 
 interface SidebarProps {
@@ -41,18 +45,36 @@ export function Sidebar({ onClose }: SidebarProps) {
     const pathname = usePathname();
     const { data: session } = useSession();
     const { counts, requestPermission } = useNotifications();
+    const { isHiddenMode } = useHiddenSpace();
 
     const handleLinkClick = () => {
         if (onClose) onClose();
     };
 
     return (
-        <div className="flex h-full w-[280px] flex-col border-r border-[#1F1F1F] bg-[#0A0A0A] text-[#EDEDED]">
+        <div className={cn(
+            "flex h-full w-[280px] flex-col border-r transition-colors duration-500",
+            isHiddenMode
+                ? "bg-[#050505] border-purple-900/50 shadow-[0_0_30px_rgba(168,85,247,0.05)]"
+                : "bg-[#0A0A0A] border-[#1F1F1F]"
+        )}>
             {/* Logo */}
             <div className="flex h-[72px] items-center justify-between px-6">
-                <div className="flex items-center gap-3">
-                    <Zap className="h-6 w-6 text-white text-opacity-80 fill-current" />
-                    <span className="text-xl font-bold tracking-tight text-white/90">DevKeep</span>
+                <div className="flex items-center gap-3 group">
+                    <div className={cn(
+                        "h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-500",
+                        isHiddenMode
+                            ? "bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20"
+                            : "bg-white/5 text-white/80 group-hover:bg-white/10"
+                    )}>
+                        {isHiddenMode ? <ShieldCheck className="h-5 w-5" /> : <Zap className="h-5 w-5 fill-current" />}
+                    </div>
+                    <span className={cn(
+                        "text-xl font-bold tracking-tight transition-colors duration-500",
+                        isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600" : "text-white/90"
+                    )}>
+                        {isHiddenMode ? "DevHide" : "DevKeep"}
+                    </span>
                 </div>
                 <NotificationCenter />
             </div>
@@ -83,7 +105,9 @@ export function Sidebar({ onClose }: SidebarProps) {
                             className={cn(
                                 "group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                                 isActive
-                                    ? "text-white bg-[#1A1A1A]"
+                                    ? isHiddenMode
+                                        ? "text-purple-400 bg-purple-500/10 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                                        : "text-white bg-[#1A1A1A] border border-white/5"
                                     : "text-[#888888] hover:text-white hover:bg-[#1A1A1A]"
                             )}
                         >
@@ -91,7 +115,9 @@ export function Sidebar({ onClose }: SidebarProps) {
                                 <item.icon
                                     className={cn(
                                         "h-5 w-5 transition-colors",
-                                        isActive ? "text-white" : "text-[#888888] group-hover:text-white"
+                                        isActive
+                                            ? isHiddenMode ? "text-purple-400" : "text-white"
+                                            : "text-[#888888] group-hover:text-white"
                                     )}
                                     strokeWidth={isActive ? 2.5 : 2}
                                 />

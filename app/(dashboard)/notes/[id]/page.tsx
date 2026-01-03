@@ -28,12 +28,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 export default function NoteEditorPage() {
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
     const searchParams = useSearchParams();
+    const { isHiddenMode } = useHiddenSpace();
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [projectId, setProjectId] = useState(searchParams.get("projectId") || "");
@@ -130,7 +132,7 @@ export default function NoteEditorPage() {
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content, projectId, attachments }),
+                body: JSON.stringify({ title, content, projectId, attachments, isHidden: isHiddenMode }),
             });
 
             if (!res.ok) throw new Error("Commit failure");

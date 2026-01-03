@@ -8,6 +8,7 @@ export interface ICredential extends Document {
     email?: string;
     password: string; // Encrypted
     notes?: string;
+    isHidden: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -48,6 +49,11 @@ const CredentialSchema = new Schema<ICredential>(
             type: String,
             trim: true,
         },
+        isHidden: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
     },
     {
         timestamps: true,
@@ -56,6 +62,7 @@ const CredentialSchema = new Schema<ICredential>(
 
 // Compound indexes for efficient queries
 CredentialSchema.index({ userId: 1, projectId: 1 });
+CredentialSchema.index({ userId: 1, isHidden: 1 });
 CredentialSchema.index({ userId: 1, createdAt: -1 });
 
 const Credential: Model<ICredential> =

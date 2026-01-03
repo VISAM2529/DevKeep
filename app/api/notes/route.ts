@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Note from "@/models/Note";
 import Project from "@/models/Project";
@@ -13,6 +13,7 @@ const noteSchema = z.object({
     content: z.string().min(1, "Content is required"),
     attachments: z.array(z.string()).optional(),
     isGlobal: z.boolean().optional(),
+    isHidden: z.boolean().optional(),
 });
 
 // GET /api/notes - List notes
@@ -30,6 +31,8 @@ export async function GET(req: NextRequest) {
         const projectId = searchParams.get("projectId");
         const communityId = searchParams.get("communityId");
         const isGlobal = searchParams.get("isGlobal");
+        const hiddenQuery = searchParams.get("hidden");
+        const isHiddenFilter = hiddenQuery === "true" ? true : { $ne: true };
         const userEmail = session.user.email?.toLowerCase() || "";
 
         let query: any;
@@ -42,11 +45,11 @@ export async function GET(req: NextRequest) {
             if (!hasAccess) {
                 return NextResponse.json({ error: "Project access denied" }, { status: 403 });
             }
-            query = { projectId };
+            query = { projectId, isHidden: isHiddenFilter };
         } else if (communityId) {
             // For now, allow community members to see notes. 
             // Ideally we should check if user is member of community.
-            query = { communityId };
+            query = { communityId, isHidden: isHiddenFilter };
         } else {
             // Get unified access filter for projects
             const accessFilter = await getProjectAccessFilter(session.user.id, userEmail);
@@ -58,7 +61,8 @@ export async function GET(req: NextRequest) {
                     { userId: session.user.id },
                     { projectId: { $in: projectIds } },
                     { isGlobal: true }
-                ]
+                ],
+                isHidden: isHiddenFilter
             };
         }
 
@@ -126,3 +130,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+

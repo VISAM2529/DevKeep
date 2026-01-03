@@ -22,6 +22,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
+import { cn } from "@/lib/utils";
 
 export default function CredentialsPage() {
     const { toast } = useToast();
@@ -29,38 +31,52 @@ export default function CredentialsPage() {
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const { isHiddenMode } = useHiddenSpace();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedCredential, setSelectedCredential] = useState<any>(null);
 
-    const fetchData = async () => {
+    const fetchCredentials = async () => {
+        setLoading(true);
         try {
-            const [credsRes, projectsRes] = await Promise.all([
-                fetch("/api/credentials"),
-                fetch("/api/projects")
-            ]);
-
-            if (!credsRes.ok || !projectsRes.ok) throw new Error("Synchronization failure");
-
-            const [credsData, projectsData] = await Promise.all([
-                credsRes.json(),
-                projectsRes.json()
-            ]);
-
-            setCredentials(credsData.credentials || []);
-            setProjects(projectsData.projects || []);
+            const res = await fetch(`/api/credentials?hidden=${isHiddenMode}`);
+            if (res.ok) {
+                const data = await res.json();
+                setCredentials(data.credentials);
+            } else {
+                throw new Error("Failed to fetch credentials");
+            }
         } catch (error) {
+            console.error("Failed to fetch credentials:", error);
             toast({
                 variant: "destructive",
                 title: "Sync Error",
-                description: "Failed to synchronize with the vault.",
+                description: "Failed to synchronize credentials.",
             });
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchProjects = async () => {
+        try {
+            const res = await fetch("/api/projects");
+            if (res.ok) {
+                const data = await res.json();
+                setProjects(data.projects || []);
+            } else {
+                throw new Error("Failed to fetch projects");
+            }
+        } catch (error) {
+            console.error("Failed to fetch projects:", error);
+        }
+    };
+
     useEffect(() => {
-        fetchData();
+        fetchCredentials();
+    }, [isHiddenMode]);
+
+    useEffect(() => {
+        fetchProjects();
     }, []);
 
     const handleDelete = async (id: string) => {
@@ -95,7 +111,7 @@ export default function CredentialsPage() {
     const handleSuccess = () => {
         setIsDialogOpen(false);
         setSelectedCredential(null);
-        fetchData();
+        fetchCredentials();
     };
 
     const filteredCredentials = (credentials || []).filter((c) =>
@@ -104,24 +120,39 @@ export default function CredentialsPage() {
     );
 
     return (
-        <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+        <div className="p-4 md:p-8 space-y-6 md:space-y-8 min-h-full pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
                 <div className="space-y-1">
-                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Identity Vault</h1>
-                    <p className="text-muted-foreground max-w-md text-xs md:text-sm">
-                        Manage your sensitive environment variables and platform access keys with AES-256 security.
+                    <h1 className={cn(
+                        "text-2xl md:text-3xl font-bold tracking-tight transition-colors",
+                        isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-200" : "text-white"
+                    )}>
+                        Identity Vault
+                    </h1>
+                    <p className={cn(
+                        "text-sm md:text-base transition-colors",
+                        isHiddenMode ? "text-purple-300/60" : "text-muted-foreground"
+                    )}>
+                        Manage your encrypted credentials and secrets securely.
                     </p>
                 </div>
-
                 <Dialog open={isDialogOpen} onOpenChange={(open) => {
                     setIsDialogOpen(open);
                     if (!open) setSelectedCredential(null);
                 }}>
                     <DialogTrigger asChild>
-                        <Button className="w-full md:w-auto h-10 px-4 gap-2 text-sm font-medium">
-                            <Plus className="h-4 w-4" />
-                            Provision Secret
+                        <Button
+                            onClick={() => setIsDialogOpen(true)}
+                            className={cn(
+                                "md:w-auto w-full transition-all duration-300",
+                                isHiddenMode
+                                    ? "bg-purple-600 hover:bg-purple-700 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)] border-purple-500/50"
+                                    : "bg-white text-black hover:bg-white/90"
+                            )}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            New Credential
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-xl">
@@ -142,13 +173,15 @@ export default function CredentialsPage() {
                 </Dialog>
             </div>
 
-            {/* Utility Bar */}
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative group flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {/* Filters & Search */}
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="relative w-full md:w-96 group">
+                    <Search className={cn(
+                        "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors",
+                        isHiddenMode ? "text-purple-400/50 group-hover:text-purple-400" : "text-muted-foreground"
+                    )} />
                     <Input
-                        placeholder="Search workspace identifiers..."
-                        className="pl-10 bg-secondary/20 border-white/5"
+                        placeholder="Search credentials..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -169,15 +202,16 @@ export default function CredentialsPage() {
                 </div>
             ) : filteredCredentials.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredCredentials.map((credential) => (
+                    {filteredCredentials.map((cred) => (
                         <CredentialCard
-                            key={credential._id}
-                            credential={credential}
+                            key={cred._id}
+                            credential={cred}
                             onDelete={handleDelete}
                             onEdit={handleEdit}
                         />
                     ))}
                 </div>
+
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
                     <div className="h-16 w-16 rounded-xl bg-white/5 flex items-center justify-center mb-4">
@@ -196,7 +230,8 @@ export default function CredentialsPage() {
                         Provision First Secret
                     </Button>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }

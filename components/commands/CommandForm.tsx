@@ -14,6 +14,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +48,7 @@ interface CommandFormProps {
 export function CommandForm({ initialData, projects = [], onSuccess }: CommandFormProps) {
     const router = useRouter();
     const { toast } = useToast();
+    const { isHiddenMode } = useHiddenSpace();
     const [isLoading, setIsLoading] = useState(false);
     const [tagInput, setTagInput] = useState("");
 
@@ -88,7 +90,7 @@ export function CommandForm({ initialData, projects = [], onSuccess }: CommandFo
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(values),
+                body: JSON.stringify({ ...values, isHidden: isHiddenMode }),
             });
 
             if (!res.ok) throw new Error("Failed to save command snippet");

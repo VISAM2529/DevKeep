@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/components/providers/NotificationProvider";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ProjectForm } from "./ProjectForm";
 import {
@@ -44,6 +45,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onDelete, currentUserId }: ProjectCardProps) {
     const { counts } = useNotifications();
+    const { isHiddenMode } = useHiddenSpace();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -53,7 +55,12 @@ export function ProjectCard({ project, onDelete, currentUserId }: ProjectCardPro
     const ownerEmail = typeof project.userId === 'object' ? project.userId?.email : null;
 
     return (
-        <Card className="group relative overflow-hidden transition-all duration-300">
+        <Card className={cn(
+            "group relative overflow-hidden transition-all duration-300",
+            isHiddenMode
+                ? "bg-black/40 border-purple-500/20 hover:border-purple-500/50 hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]"
+                : "hover:bg-secondary/20 border-white/10"
+        )}>
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
                 <div className="flex items-center gap-4">
                     <div className="relative h-10 w-10 rounded-lg overflow-hidden border border-white/10 group-hover:border-white/20 transition-colors">

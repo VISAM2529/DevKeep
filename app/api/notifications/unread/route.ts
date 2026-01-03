@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+// Re-trigger build
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Project from "@/models/Project";
 import Community from "@/models/Community";
@@ -8,7 +9,9 @@ import Message from "@/models/Message";
 import Task from "@/models/Task";
 import mongoose from "mongoose";
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request) {
     try {
         const session = await getServerSession(authOptions);
         if (!session || !session.user?.id) {
@@ -19,11 +22,20 @@ export async function GET() {
         const userId = new mongoose.Types.ObjectId(session.user.id);
         const userEmail = session.user.email?.toLowerCase();
 
+        const { searchParams } = new URL(req.url);
+        const hiddenQuery = searchParams.get("hidden");
+        const isHiddenFilter = hiddenQuery === "true" ? true : { $ne: true };
+
         // 1. Get projects (owned or accepted collaborator)
         const projects = await Project.find({
-            $or: [
-                { userId: userId },
-                { "sharedWith": { $elemMatch: { email: userEmail, accepted: true } } }
+            $and: [
+                {
+                    $or: [
+                        { userId: userId },
+                        { "sharedWith": { $elemMatch: { email: userEmail, accepted: true } } }
+                    ]
+                },
+                { isHidden: isHiddenFilter }
             ]
         }).select("_id name");
 
@@ -64,9 +76,14 @@ export async function GET() {
 
         // 4. Get communities (owner or member)
         const communities = await Community.find({
-            $or: [
-                { ownerId: userId },
-                { "members.userId": userId }
+            $and: [
+                {
+                    $or: [
+                        { ownerId: userId },
+                        { "members.userId": userId }
+                    ]
+                },
+                { isHidden: isHiddenFilter }
             ]
         }).select("_id name");
 
@@ -140,3 +157,4 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch unread notifications" }, { status: 500 });
     }
 }
+

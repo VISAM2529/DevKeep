@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Command from "@/models/Command";
 import Project from "@/models/Project";
@@ -13,6 +13,7 @@ const commandSchema = z.object({
     description: z.string().optional(),
     category: z.enum(["VSCode", "Git", "Docker", "NPM", "Server", "Other"]).optional(),
     tags: z.array(z.string()).optional(),
+    isHidden: z.boolean().optional(),
 });
 
 // GET /api/commands - List commands with filtering
@@ -28,6 +29,8 @@ export async function GET(req: NextRequest) {
         const projectId = searchParams.get("projectId");
         const category = searchParams.get("category");
         const search = searchParams.get("search");
+        const hiddenQuery = searchParams.get("hidden");
+        const isHiddenFilter = hiddenQuery === "true" ? true : { $ne: true };
         const userEmail = session.user.email?.toLowerCase() || "";
 
         await connectDB();
@@ -42,7 +45,7 @@ export async function GET(req: NextRequest) {
             if (!hasAccess) {
                 return NextResponse.json({ error: "Project access denied" }, { status: 403 });
             }
-            query = { projectId };
+            query = { projectId, isHidden: isHiddenFilter };
         } else {
             // Get unified access filter for projects
             const accessFilter = await getProjectAccessFilter(session.user.id, userEmail);
@@ -51,6 +54,7 @@ export async function GET(req: NextRequest) {
 
             query = {
                 $or: [{ userId: session.user.id }, { projectId: { $in: projectIds } }],
+                isHidden: isHiddenFilter
             };
         }
 
@@ -112,3 +116,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+

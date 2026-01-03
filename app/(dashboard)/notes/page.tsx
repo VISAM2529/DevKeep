@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,10 +17,12 @@ import {
     Trash2,
     Loader2,
     Paperclip,
+    Upload,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 export default function NotesPage() {
     const { toast } = useToast();
@@ -29,6 +32,7 @@ export default function NotesPage() {
     const [noteToDelete, setNoteToDelete] = useState<any>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const { isHiddenMode } = useHiddenSpace();
 
     const handleQuickUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -55,7 +59,8 @@ export default function NotesPage() {
                     title: file.name.split('.')[0], // Use filename as title
                     content: `Document note imported from: **${file.name}**`,
                     attachments: [url],
-                    isGlobal: true
+                    isGlobal: true,
+                    isHidden: isHiddenMode
                 }),
             });
 
@@ -79,7 +84,7 @@ export default function NotesPage() {
 
     const fetchNotes = async () => {
         try {
-            const res = await fetch("/api/notes");
+            const res = await fetch(`/api/notes?hidden=${isHiddenMode}`);
             if (!res.ok) throw new Error("Synchronization failure");
             const data = await res.json();
             setNotes(data.notes || []);
@@ -122,7 +127,7 @@ export default function NotesPage() {
 
     useEffect(() => {
         fetchNotes();
-    }, []);
+    }, [isHiddenMode]);
 
     const filteredNotes = (notes || []).filter((n) =>
         (n.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -135,42 +140,68 @@ export default function NotesPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
                 <div className="space-y-1">
                     <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">Documentation</h1>
-                    <p className="text-muted-foreground max-w-md text-xs md:text-sm">
-                        Maintain your technical debt, architectural decisions, and project-specific knowledge bases.
+                    <h1 className={cn(
+                        "text-2xl md:text-3xl font-bold tracking-tight transition-colors",
+                        isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-200" : "text-white"
+                    )}>
+                        Documentation
+                    </h1>
+                    <p className={cn(
+                        "text-sm md:text-base transition-colors",
+                        isHiddenMode ? "text-purple-300/60" : "text-muted-foreground"
+                    )}>
+                        Create and manage project documentation and notes.
                     </p>
                 </div>
-
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <div className="relative">
-                        <Button variant="outline" className="w-full md:w-auto h-10 px-4 gap-2 text-sm font-medium" disabled={uploading}>
-                            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-                            Upload Doc
-                        </Button>
+                <div className="flex gap-2 w-full md:w-auto">
+                    <label htmlFor="quick-upload-input" className={cn(
+                        "flex-1 md:flex-none transition-all duration-300 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2",
+                        isHiddenMode
+                            ? "bg-black/40 text-purple-300 border border-purple-500/30 hover:bg-purple-500/10"
+                            : "bg-white/10 text-white hover:bg-white/20"
+                    )}>
+                        {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                        Quick Upload
                         <input
+                            id="quick-upload-input"
                             type="file"
-                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            className="sr-only"
                             onChange={handleQuickUpload}
                             accept=".doc,.docx,.xls,.xlsx,.pdf"
+                            disabled={uploading}
                         />
-                    </div>
+                    </label>
                     <Link href="/notes/new" className="flex-1 md:flex-none">
-                        <Button className="w-full h-10 px-4 gap-2 text-sm font-medium">
-                            <Plus className="h-4 w-4" />
-                            Draft Note
+                        <Button className={cn(
+                            "w-full transition-all duration-300",
+                            isHiddenMode
+                                ? "bg-purple-600 hover:bg-purple-700 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)] border-purple-500/50"
+                                : "bg-white text-black hover:bg-white/90"
+                        )}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            New Note
                         </Button>
                     </Link>
                 </div>
             </div>
 
-            {/* Utility Bar */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative group flex-1 max-w-md w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {/* Search & Filters */}
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="relative w-full md:w-96 group">
+                    <Search className={cn(
+                        "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors",
+                        isHiddenMode ? "text-purple-400/50 group-hover:text-purple-400" : "text-muted-foreground"
+                    )} />
                     <Input
-                        placeholder="Search document fragments..."
-                        className="pl-9 h-10 bg-secondary/20 border-white/5"
+                        placeholder="Search documentation..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        className={cn(
+                            "pl-9 transition-all duration-300",
+                            isHiddenMode
+                                ? "bg-black/40 border-purple-500/20 text-purple-100 placeholder:text-purple-500/30 focus:border-purple-500/50 focus:ring-purple-500/20"
+                                : "bg-white/5 border-white/10 text-white placeholder:text-muted-foreground focus:border-white/20"
+                        )}
                     />
                 </div>
                 <div className="flex items-center gap-2">
@@ -191,48 +222,49 @@ export default function NotesPage() {
                     ))}
                 </div>
             ) : filteredNotes.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {filteredNotes.map((note) => (
-                        <Card key={note._id} className="group relative h-full hover:bg-secondary/30 transition-all duration-300">
-                            <Link href={`/notes/${note._id}`} className="block h-full">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <Badge variant="outline" className="text-[10px] font-medium border-white/10 text-muted-foreground">
-                                            {note.projectId?.name || "Global Frame"}
-                                        </Badge>
-                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                            <Calendar className="h-3 w-3" />
-                                            {new Date(note.updatedAt).toLocaleDateString()}
-                                        </span>
+                        <Link href={`/notes/${note._id}`} key={note._id}>
+                            <Card className={cn(
+                                "group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 h-full",
+                                isHiddenMode
+                                    ? "bg-black/40 border-purple-500/20 hover:border-purple-500/50 hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]"
+                                    : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/[0.07]"
+                            )}>
+                                <CardHeader className="p-4 md:p-6 pb-2">
+                                    <div className="flex items-start justify-between">
+                                        <CardTitle className="text-lg font-medium text-white truncate pr-8">
+                                            {note.title}
+                                        </CardTitle>
                                     </div>
-                                    <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-1 pr-8">
-                                        {note.title}
-                                    </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-4 min-h-[60px]">
-                                        {note.content.replace(/[#*`]/g, "")}
+                                <CardContent className="p-4 md:p-6 pt-2">
+                                    <p className="text-sm text-muted-foreground line-clamp-3">
+                                        {note.content?.replace(/[*#_`]/g, '') || "No content"}
                                     </p>
-                                    <div className="flex items-center justify-end pt-2 border-t border-white/5">
-                                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-all group-hover:translate-x-1" />
-                                    </div>
+                                    {note.attachments?.length > 0 && (
+                                        <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
+                                            <Paperclip className="h-3 w-3" />
+                                            {note.attachments.length} Attachment{note.attachments.length > 1 ? 's' : ''}
+                                        </div>
+                                    )}
                                 </CardContent>
-                            </Link>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setNoteToDelete(note);
-                                }}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </Card>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setNoteToDelete(note);
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </Card>
+                        </Link>
                     ))}
-                </div>
+                </div >
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
                     <div className="h-16 w-16 rounded-xl bg-white/5 flex items-center justify-center mb-6">
@@ -261,6 +293,6 @@ export default function NotesPage() {
                 confirmText="Delete Note"
                 variant="destructive"
             />
-        </div>
+        </div >
     );
 }

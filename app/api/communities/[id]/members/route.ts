@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Community from "@/models/Community";
 import User from "@/models/User";
@@ -62,6 +62,7 @@ export async function POST(
             userId: targetUser._id,
             role,
             joinedAt: new Date(),
+            accepted: false,
         });
 
         await community.save();

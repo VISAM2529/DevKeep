@@ -158,7 +158,7 @@ export function CommunityMemberModal({
                                 ) : (
                                     <UserPlus className="h-4 w-4" />
                                 )}
-                                Add to Community
+                                Send Invitation
                             </Button>
                         </div>
                     </form>

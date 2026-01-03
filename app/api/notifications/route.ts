@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Notification from "@/models/Notification";
 
@@ -45,3 +45,4 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ error: "Failed to clear notifications" }, { status: 500 });
     }
 }
+

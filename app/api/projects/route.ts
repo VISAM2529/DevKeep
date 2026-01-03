@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Project from "@/models/Project";
 import mongoose from "mongoose";
@@ -17,6 +17,7 @@ const projectSchema = z.object({
     logo: z.string().optional(),
     banner: z.string().optional(),
     communityId: z.string().optional(),
+    isHidden: z.boolean().optional(),
 });
 
 // GET /api/projects - List all projects for authenticated user
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
         const status = searchParams.get("status");
         const environment = searchParams.get("environment");
         const communityIdQuery = searchParams.get("communityId");
+        const hiddenQuery = searchParams.get("hidden");
         const userEmail = session.user.email?.toLowerCase() || "";
 
         // Build base query filters
@@ -41,6 +43,15 @@ export async function GET(req: NextRequest) {
         if (status) filters.status = status;
         if (environment) filters.environment = environment;
         if (communityIdQuery) filters.communityId = communityIdQuery;
+
+        // Hidden Space Logic
+        // If hidden=true, show ONLY hidden projects
+        // If hidden!=true (default), show ONLY visible projects (false or undefined)
+        if (hiddenQuery === "true") {
+            filters.isHidden = true;
+        } else {
+            filters.isHidden = { $ne: true };
+        }
 
         // Get unified access filter
         const { getProjectAccessFilter } = await import("@/lib/auth");
@@ -138,3 +149,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+

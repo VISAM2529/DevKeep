@@ -23,6 +23,7 @@ import {
     CommandSeparator,
     CommandShortcut,
 } from "@/components/ui/command";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 interface CommandPaletteProps {
     trigger?: React.ReactNode;
@@ -31,6 +32,8 @@ interface CommandPaletteProps {
 export function CommandPalette({ trigger }: CommandPaletteProps) {
     const [open, setOpen] = React.useState(false);
     const router = useRouter();
+    const { toggleHiddenMode } = useHiddenSpace();
+    const [search, setSearch] = React.useState("");
 
     React.useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -49,6 +52,17 @@ export function CommandPalette({ trigger }: CommandPaletteProps) {
         command();
     }, []);
 
+    const handleKeyDown = async (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && search.length >= 4) {
+            // Try to toggle hidden mode with the search term as password
+            const success = await toggleHiddenMode(search);
+            if (success) {
+                setOpen(false);
+                setSearch("");
+            }
+        }
+    };
+
     return (
         <>
             <div onClick={() => setOpen(true)}>
@@ -66,7 +80,12 @@ export function CommandPalette({ trigger }: CommandPaletteProps) {
             </div>
 
             <CommandDialog open={open} onOpenChange={setOpen}>
-                <CommandInput placeholder="Type a command or search..." />
+                <CommandInput
+                    placeholder="Type a command or search..."
+                    value={search}
+                    onValueChange={setSearch}
+                    onKeyDown={handleKeyDown}
+                />
                 <CommandList>
                     <CommandEmpty>No results found.</CommandEmpty>
                     <CommandGroup heading="Suggestions">

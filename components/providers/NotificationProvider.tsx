@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { showDesktopNotification, requestNotificationPermission } from "@/lib/notification";
 
 interface UnreadCounts {
@@ -22,6 +23,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
     const { data: session } = useSession();
+    const { isHiddenMode } = useHiddenSpace();
     const [counts, setCounts] = useState<UnreadCounts>({
         totalProjectsUnread: 0,
         totalCommunitiesUnread: 0,
@@ -33,9 +35,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const prevCountsRef = useRef<UnreadCounts>(counts);
 
     const refresh = useCallback(async () => {
-        if (!session?.user?.id) return;
+        if (!session?.user) return;
+
         try {
-            const res = await fetch("/api/notifications/unread");
+            const res = await fetch(`/api/notifications/unread?hidden=${isHiddenMode}&t=${Date.now()}`, {
+                cache: 'no-store',
+                headers: { 'Pragma': 'no-cache' }
+            });
             if (res.ok) {
                 const data: UnreadCounts = await res.json();
 
@@ -81,7 +87,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         body: "You have a new activity notification.",
                         tag: "general-notification"
                     });
-                    // Play notification sound
+
                     try {
                         const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
                         audio.volume = 0.5;
@@ -100,7 +106,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         } catch (error) {
             console.error("Failed to fetch unread notifications", error);
         }
-    }, [session?.user?.id]);
+    }, [session?.user?.id, isHiddenMode]);
 
     useEffect(() => {
         if (session?.user?.id) {

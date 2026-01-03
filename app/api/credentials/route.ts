@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Credential from "@/models/Credential";
 import Project from "@/models/Project";
@@ -14,6 +14,7 @@ const credentialSchema = z.object({
     email: z.string().email().optional().or(z.literal("")),
     password: z.string().min(1, "Password is required"),
     notes: z.string().optional(),
+    isHidden: z.boolean().optional(),
 });
 
 // GET /api/credentials - List credentials (optionally filtered by projectId)
@@ -27,6 +28,8 @@ export async function GET(req: NextRequest) {
 
         const { searchParams } = new URL(req.url);
         const projectId = searchParams.get("projectId");
+        const hiddenQuery = searchParams.get("hidden");
+        const isHiddenFilter = hiddenQuery === "true" ? true : { $ne: true };
         const userEmail = session.user.email?.toLowerCase() || "";
 
         await connectDB();
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
             if (!hasAccess) {
                 return NextResponse.json({ error: "Project access denied" }, { status: 403 });
             }
-            query = { projectId };
+            query = { projectId, isHidden: isHiddenFilter };
         } else {
             // Get unified access filter for projects
             const accessFilter = await getProjectAccessFilter(session.user.id, userEmail);
@@ -50,6 +53,7 @@ export async function GET(req: NextRequest) {
 
             query = {
                 $or: [{ userId: session.user.id }, { projectId: { $in: projectIds } }],
+                isHidden: isHiddenFilter
             };
         }
 
@@ -118,3 +122,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+

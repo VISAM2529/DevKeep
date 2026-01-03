@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { ProjectTable } from "@/components/projects/ProjectTable";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,12 @@ import { Plus, Search, FolderKanban, LayoutGrid, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
 import { InvitationCard } from "@/components/projects/InvitationCard";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 export default function ProjectsPage() {
     const { toast } = useToast();
     const { data: session } = useSession();
+    const { isHiddenMode } = useHiddenSpace();
     const [projects, setProjects] = useState<any[]>([]);
     const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -21,17 +24,19 @@ export default function ProjectsPage() {
     const [view, setView] = useState<"grid" | "table">("grid");
 
     const fetchProjects = async () => {
+        setLoading(true); // Moved setLoading to the start
         try {
-            const res = await fetch("/api/projects");
+            const res = await fetch(`/api/projects?hidden=${isHiddenMode}`); // Added hidden query param
             if (!res.ok) throw new Error("Failed to fetch projects");
-            const data = await res.json();
-            setProjects(data.projects || []);
-            setPendingInvitations(data.pendingInvitations || []);
+            const data: any = await res.json(); // Changed type to any for now, assuming Project[] is correct
+            setProjects(data.projects || []); // Original line, keeping it for now based on context
+            setPendingInvitations(data.pendingInvitations || []); // Original line, keeping it for now based on context
         } catch (error) {
+            console.error(error); // Added console.error
             toast({
-                variant: "destructive",
                 title: "Error",
-                description: "Failed to load projects. Please try again.",
+                description: "Failed to load projects",
+                variant: "destructive",
             });
         } finally {
             setLoading(false);
@@ -40,7 +45,7 @@ export default function ProjectsPage() {
 
     useEffect(() => {
         fetchProjects();
-    }, []);
+    }, [isHiddenMode]); // Added isHiddenMode to dependency array
 
     const handleDelete = async (id: string) => {
         try {
@@ -74,13 +79,19 @@ export default function ProjectsPage() {
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">Projects</h1>
+                    <h1 className={cn(
+                        "text-xl md:text-2xl font-bold tracking-tight",
+                        isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600" : "text-white"
+                    )}>Projects</h1>
                     <p className="text-muted-foreground max-w-md text-xs md:text-sm">
                         Manage your active development environments and secure their access protocols.
                     </p>
                 </div>
                 <Link href="/projects/new" className="w-full md:w-auto">
-                    <Button className="w-full h-10 px-4 gap-2 text-sm font-medium">
+                    <Button className={cn(
+                        "w-full h-10 px-4 gap-2 text-sm font-medium",
+                        isHiddenMode && "bg-purple-600 hover:bg-purple-700 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                    )}>
                         <Plus className="h-4 w-4" />
                         Initialize Workspace
                     </Button>
@@ -90,19 +101,33 @@ export default function ProjectsPage() {
             {/* Search and Filters */}
             <div className="flex items-center gap-4">
                 <div className="relative group flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className={cn(
+                        "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",
+                        isHiddenMode ? "text-purple-400" : "text-muted-foreground"
+                    )} />
                     <Input
                         placeholder="Search by name or tech stack..."
-                        className="pl-10 bg-secondary/20 border-white/5"
+                        className={cn(
+                            "pl-10",
+                            isHiddenMode
+                                ? "bg-black/40 border-purple-500/20 text-purple-100 placeholder:text-purple-500/50 focus-visible:ring-purple-500/50"
+                                : "bg-secondary/20 border-white/5"
+                        )}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center bg-secondary/20 rounded-lg p-1 border border-white/5">
+                <div className={cn(
+                    "flex items-center rounded-lg p-1 border",
+                    isHiddenMode ? "bg-black/40 border-purple-500/20" : "bg-secondary/20 border-white/5"
+                )}>
                     <Button
                         variant={view === "grid" ? "secondary" : "ghost"}
                         size="icon"
-                        className="h-8 w-8 rounded-md"
+                        className={cn(
+                            "h-8 w-8 rounded-md",
+                            view === "grid" && isHiddenMode && "bg-purple-500/20 text-purple-200"
+                        )}
                         onClick={() => setView("grid")}
                     >
                         <LayoutGrid className="h-4 w-4" />
@@ -110,7 +135,10 @@ export default function ProjectsPage() {
                     <Button
                         variant={view === "table" ? "secondary" : "ghost"}
                         size="icon"
-                        className="h-8 w-8 rounded-md"
+                        className={cn(
+                            "h-8 w-8 rounded-md",
+                            view === "table" && isHiddenMode && "bg-purple-500/20 text-purple-200"
+                        )}
                         onClick={() => setView("table")}
                     >
                         <List className="h-4 w-4" />

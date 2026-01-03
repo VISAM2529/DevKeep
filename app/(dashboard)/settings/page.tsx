@@ -22,10 +22,56 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/date-picker";
+import { HiddenSpaceSettings } from "@/components/settings/HiddenSpaceSettings";
 
 export default function SettingsPage() {
-    const { data: session } = useSession();
+    const { data: session, update } = useSession();
     const { toast } = useToast();
+    const [name, setName] = useState(session?.user?.name || "");
+    const [birthDate, setBirthDate] = useState<Date | undefined>(
+        session?.user?.birthDate ? new Date(session.user.birthDate) : undefined
+    );
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const handleUpdateProfile = async () => {
+        setIsUpdating(true);
+        try {
+            const res = await fetch("/api/user/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, birthDate }),
+            });
+
+            if (!res.ok) throw new Error("Failed to update profile");
+
+            const updatedUser = await res.json();
+
+            // Update session
+            await update({
+                ...session,
+                user: {
+                    ...session?.user,
+                    name: updatedUser.name,
+                    birthDate: updatedUser.birthDate
+                }
+            });
+
+            toast({
+                title: "Profile Updated",
+                description: "Your identity has been successfully re-calibrated.",
+            });
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Update Failed",
+                description: "Could not sync identity changes to the core.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     const handleExport = async () => {
         toast({
@@ -73,18 +119,34 @@ export default function SettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Authorized Name</label>
-                                <Input defaultValue={session?.user?.name || ""} />
+                                <Input
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Communication Node (Email)</label>
                                 <Input defaultValue={session?.user?.email || ""} disabled className="opacity-50 cursor-not-allowed" />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Birth Date (For Community Alerts)</label>
+                                <DatePicker date={birthDate} setDate={setBirthDate} />
+                            </div>
                         </div>
                         <div className="flex justify-end">
-                            <Button className="h-10 px-6">Update Identity</Button>
+                            <Button
+                                className="h-10 px-6"
+                                onClick={handleUpdateProfile}
+                                disabled={isUpdating}
+                            >
+                                {isUpdating ? "Updating..." : "Update Identity"}
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Hidden Space Settings */}
+                <HiddenSpaceSettings />
 
                 {/* Preferences */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

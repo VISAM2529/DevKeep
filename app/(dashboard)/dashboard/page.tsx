@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { InvitationCard } from "@/components/projects/InvitationCard";
 import { MyTasks } from "@/components/dashboard/MyTasks";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 interface DashboardStats {
     counts: {
@@ -36,19 +37,20 @@ interface DashboardStats {
 export default function DashboardPage() {
     const { data: session, status: authStatus } = useSession();
     const { toast } = useToast();
+    const { isHiddenMode } = useHiddenSpace();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchStats = async () => {
         try {
-            const res = await fetch("/api/dashboard/stats");
+            const res = await fetch(`/api/dashboard/stats?hidden=${isHiddenMode}`);
             if (!res.ok) throw new Error("Synchronization failure");
             const data = await res.json();
             setStats(data);
 
             // Fetch pending invitations
-            const projectsRes = await fetch("/api/projects");
+            const projectsRes = await fetch(`/api/projects?hidden=${isHiddenMode}`);
             if (projectsRes.ok) {
                 const projectsData = await projectsRes.json();
                 setPendingInvitations(projectsData.pendingInvitations || []);
@@ -68,7 +70,7 @@ export default function DashboardPage() {
         if (authStatus === "authenticated") {
             fetchStats();
         }
-    }, [authStatus]);
+    }, [authStatus, isHiddenMode]);
 
     if (authStatus === "loading" || loading) {
         return (
@@ -118,13 +120,27 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
                 {statCards.map((stat, i) => (
                     <Link key={i} href={stat.href}>
-                        <Card className="hover:border-white/20 transition-all cursor-pointer">
+                        <Card className={cn(
+                            "transition-all cursor-pointer duration-500",
+                            isHiddenMode
+                                ? "bg-purple-900/10 border-purple-500/20 hover:bg-purple-900/20 hover:border-purple-500/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)]"
+                                : "hover:border-white/20"
+                        )}>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
-                                <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-                                <stat.icon className="h-3 w-3 md:h-4 md:w-4 text-white/50" />
+                                <CardTitle className={cn(
+                                    "text-[10px] md:text-sm font-medium",
+                                    isHiddenMode ? "text-purple-300/70" : "text-muted-foreground"
+                                )}>{stat.label}</CardTitle>
+                                <stat.icon className={cn(
+                                    "h-3 w-3 md:h-4 md:w-4 transition-colors",
+                                    isHiddenMode ? "text-purple-400" : "text-white/50"
+                                )} />
                             </CardHeader>
                             <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
-                                <div className="text-lg md:text-2xl font-bold text-white">{stat.val}</div>
+                                <div className={cn(
+                                    "text-lg md:text-2xl font-bold transition-colors",
+                                    isHiddenMode ? "text-purple-100" : "text-white"
+                                )}>{stat.val}</div>
                             </CardContent>
                         </Card>
                     </Link>
@@ -154,32 +170,43 @@ export default function DashboardPage() {
 
             {/* Recent Activity & Quick Tools & My Tasks */}
             <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
-                <Card className="lg:col-span-2 order-2 lg:order-1">
+                <Card className={cn(
+                    "lg:col-span-2 order-2 lg:order-1 transition-all duration-500",
+                    isHiddenMode ? "bg-black/40 border-purple-500/20" : ""
+                )}>
                     <CardHeader className="flex flex-row items-center justify-between p-4 md:p-6 pb-2 md:pb-4">
                         <div>
-                            <CardTitle className="text-base md:text-lg font-semibold">Recent Activity</CardTitle>
-                            <CardDescription className="text-xs md:text-sm">Your latest workspace actions</CardDescription>
+                            <CardTitle className={cn("text-base md:text-lg font-semibold", isHiddenMode ? "text-purple-100" : "")}>Recent Activity</CardTitle>
+                            <CardDescription className={cn("text-xs md:text-sm", isHiddenMode ? "text-purple-300/50" : "")}>Your latest workspace actions</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent className="p-2 md:p-6 pt-0 md:pt-0">
                         {stats?.recentItems && stats.recentItems.length > 0 ? (
                             <div className="space-y-1">
                                 {stats.recentItems.map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 md:p-3 rounded-lg hover:bg-white/5 transition-colors group">
+                                    <div key={i} className={cn(
+                                        "flex items-center justify-between p-2 md:p-3 rounded-lg transition-colors group",
+                                        isHiddenMode ? "hover:bg-purple-500/10" : "hover:bg-white/5"
+                                    )}>
                                         <div className="flex items-center gap-2 md:gap-3">
-                                            <div className="h-7 w-7 md:h-8 md:w-8 rounded-md bg-white/5 flex items-center justify-center border border-white/5">
-                                                {item.type === "Project" && <FolderKanban className="h-3.5 w-3.5 md:h-4 md:w-4 text-white/70" />}
-                                                {item.type === "Credential" && <Lock className="h-3.5 w-3.5 md:h-4 md:w-4 text-white/70" />}
-                                                {item.type === "Command" && <Terminal className="h-3.5 w-3.5 md:h-4 md:w-4 text-white/70" />}
-                                                {item.type === "Note" && <FileText className="h-3.5 w-3.5 md:h-4 md:w-4 text-white/70" />}
+                                            <div className={cn(
+                                                "h-7 w-7 md:h-8 md:w-8 rounded-md flex items-center justify-center border transition-colors",
+                                                isHiddenMode
+                                                    ? "bg-purple-900/20 border-purple-500/20 text-purple-400"
+                                                    : "bg-white/5 border-white/5 text-white/70"
+                                            )}>
+                                                {item.type === "Project" && <FolderKanban className="h-3.5 w-3.5 md:h-4 md:w-4" />}
+                                                {item.type === "Credential" && <Lock className="h-3.5 w-3.5 md:h-4 md:w-4" />}
+                                                {item.type === "Command" && <Terminal className="h-3.5 w-3.5 md:h-4 md:w-4" />}
+                                                {item.type === "Note" && <FileText className="h-3.5 w-3.5 md:h-4 md:w-4" />}
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-xs md:text-sm font-medium text-white truncate max-w-[120px] md:max-w-none">{item.name}</div>
-                                                <div className="text-[10px] md:text-xs text-muted-foreground">{item.type}</div>
+                                                <div className={cn("text-xs md:text-sm font-medium truncate max-w-[120px] md:max-w-none", isHiddenMode ? "text-purple-100" : "text-white")}>{item.name}</div>
+                                                <div className={cn("text-[10px] md:text-xs", isHiddenMode ? "text-purple-400/60" : "text-muted-foreground")}>{item.type}</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 md:gap-3">
-                                            <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1.5 shrink-0">
+                                            <div className={cn("text-[10px] md:text-xs flex items-center gap-1.5 shrink-0", isHiddenMode ? "text-purple-400/60" : "text-muted-foreground")}>
                                                 {new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                             </div>
                                         </div>
@@ -188,19 +215,22 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 md:py-12 text-center space-y-3 md:space-y-4">
-                                <Activity className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/50" />
+                                <Activity className={cn("h-6 w-6 md:h-8 md:w-8", isHiddenMode ? "text-purple-500/30" : "text-muted-foreground/50")} />
                                 <div className="space-y-1">
-                                    <h3 className="text-xs md:text-sm font-medium text-muted-foreground">No recent activity</h3>
+                                    <h3 className={cn("text-xs md:text-sm font-medium", isHiddenMode ? "text-purple-300/50" : "text-muted-foreground")}>No recent activity</h3>
                                 </div>
                             </div>
                         )}
                     </CardContent>
                 </Card>
 
-                <Card className="order-1 lg:order-2">
+                <Card className={cn(
+                    "order-1 lg:order-2 transition-all duration-500",
+                    isHiddenMode ? "bg-black/40 border-purple-500/20" : ""
+                )}>
                     <CardHeader className="p-4 md:p-6 pb-2 md:pb-4">
-                        <CardTitle className="text-base md:text-lg font-semibold">Quick Actions</CardTitle>
-                        <CardDescription className="text-xs md:text-sm">Common tasks</CardDescription>
+                        <CardTitle className={cn("text-base md:text-lg font-semibold", isHiddenMode ? "text-purple-100" : "")}>Quick Actions</CardTitle>
+                        <CardDescription className={cn("text-xs md:text-sm", isHiddenMode ? "text-purple-300/50" : "")}>Common tasks</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 md:space-y-3 p-4 md:p-6 pt-0 md:pt-0">
                         {[
@@ -209,14 +239,24 @@ export default function DashboardPage() {
                             { label: "Write Note", icon: FileText, href: "/notes/new" },
                         ].map((tool, i) => (
                             <Link key={i} href={tool.href}>
-                                <div className="flex items-center justify-between p-2 md:p-3 rounded-lg border border-white/5 hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer group">
+                                <div className={cn(
+                                    "flex items-center justify-between p-2 md:p-3 rounded-lg border transition-all cursor-pointer group",
+                                    isHiddenMode
+                                        ? "border-purple-500/10 hover:bg-purple-500/10 hover:border-purple-500/30"
+                                        : "border-white/5 hover:bg-white/5 hover:border-white/10"
+                                )}>
                                     <div className="flex items-center gap-3">
-                                        <div className="h-7 w-7 md:h-8 md:w-8 rounded-md bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                                            <tool.icon className="h-3.5 w-3.5 md:h-4 md:w-4 text-white/70" />
+                                        <div className={cn(
+                                            "h-7 w-7 md:h-8 md:w-8 rounded-md flex items-center justify-center transition-colors",
+                                            isHiddenMode
+                                                ? "bg-purple-900/20 text-purple-400 group-hover:bg-purple-900/30"
+                                                : "bg-white/5 text-white/70 group-hover:bg-white/10"
+                                        )}>
+                                            <tool.icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                         </div>
-                                        <span className="text-xs md:text-sm font-medium text-white/80 group-hover:text-white">{tool.label}</span>
+                                        <span className={cn("text-xs md:text-sm font-medium transition-colors", isHiddenMode ? "text-purple-200 group-hover:text-purple-100" : "text-white/80 group-hover:text-white")}>{tool.label}</span>
                                     </div>
-                                    <ArrowUpRight className="h-3 w-3 md:h-3.5 md:w-3.5 text-muted-foreground group-hover:text-white transition-colors" />
+                                    <ArrowUpRight className={cn("h-3 w-3 md:h-3.5 md:w-3.5 transition-colors", isHiddenMode ? "text-purple-400 group-hover:text-purple-200" : "text-muted-foreground group-hover:text-white")} />
                                 </div>
                             </Link>
                         ))}

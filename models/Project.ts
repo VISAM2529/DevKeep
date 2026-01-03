@@ -12,6 +12,7 @@ export interface IProject extends Document {
     status: "Active" | "Archived";
     isMeetingActive: boolean;
     activeMeetingId?: string;
+    isHidden: boolean;
     logo?: string;
     banner?: string;
     sharedWith: {
@@ -74,6 +75,11 @@ const ProjectSchema = new Schema<IProject>(
         },
         activeMeetingId: {
             type: String, // Stores the unique ID of the current meeting session
+        },
+        isHidden: {
+            type: Boolean,
+            default: false,
+            index: true,
         },
         logo: {
             type: String,

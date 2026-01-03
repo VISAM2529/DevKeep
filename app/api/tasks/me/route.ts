@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Task from "@/models/Task";
 
@@ -26,3 +26,4 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Failed to fetch tasks" }, { status: 500 });
     }
 }
+

@@ -14,6 +14,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -46,6 +47,7 @@ interface CredentialFormProps {
 export function CredentialForm({ initialData, projects = [], onSuccess }: CredentialFormProps) {
     const router = useRouter();
     const { toast } = useToast();
+    const { isHiddenMode } = useHiddenSpace();
     const [isLoading, setIsLoading] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [pendingValues, setPendingValues] = useState<CredentialFormValues | null>(null);
@@ -72,7 +74,7 @@ export function CredentialForm({ initialData, projects = [], onSuccess }: Creden
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(values),
+                body: JSON.stringify({ ...values, isHidden: isHiddenMode }),
             });
 
             if (!res.ok) throw new Error("Failed to save credential");

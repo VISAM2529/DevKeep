@@ -8,8 +8,11 @@ import { getInitials } from "@/lib/utils";
 import { Calendar, CheckCircle2, Circle, Clock } from "lucide-react";
 import Link from "next/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 export function MyTasks() {
+    const { isHiddenMode } = useHiddenSpace();
     const [tasks, setTasks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -72,7 +75,12 @@ export function MyTasks() {
     }
 
     return (
-        <Card>
+        <Card className={cn(
+            "transition-all duration-300",
+            isHiddenMode
+                ? "bg-black/40 border-purple-500/20"
+                : ""
+        )}>
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
@@ -102,7 +110,12 @@ export function MyTasks() {
                                     href={`/projects/${task.projectId?._id}?tab=tasks`}
                                     className="block"
                                 >
-                                    <div className="p-3 rounded-lg border border-border/40 hover:border-primary/50 hover:bg-secondary/20 transition-all group">
+                                    <div className={cn(
+                                        "p-3 rounded-lg border transition-all group",
+                                        isHiddenMode
+                                            ? "border-purple-500/10 hover:border-purple-500/40 hover:bg-purple-500/5 bg-purple-900/10"
+                                            : "border-border/40 hover:border-primary/50 hover:bg-secondary/20"
+                                    )}>
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1 space-y-2">
                                                 <div className="flex items-center gap-2">

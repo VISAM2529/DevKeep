@@ -14,6 +14,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +51,7 @@ interface ProjectFormProps {
 export function ProjectForm({ initialData, communityId, onSuccess }: ProjectFormProps) {
     const router = useRouter();
     const { toast } = useToast();
+    const { isHiddenMode } = useHiddenSpace();
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [techInput, setTechInput] = useState("");
@@ -125,7 +127,7 @@ export function ProjectForm({ initialData, communityId, onSuccess }: ProjectForm
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...values, logo: logoUrl, communityId }),
+                body: JSON.stringify({ ...values, logo: logoUrl, communityId, isHidden: isHiddenMode }),
             });
 
             if (!res.ok) throw new Error("Failed to save project");

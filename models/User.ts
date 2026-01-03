@@ -5,9 +5,17 @@ export interface IUser extends Document {
     name: string;
     email: string;
     password?: string;
+    hiddenSpacePassword?: string;
     image?: string;
     emailVerified?: Date;
     provider?: "credentials" | "google";
+    birthDate?: Date;
+    lastBirthdayNotificationYear?: number;
+    plan: "basic" | "pro" | "premium";
+    razorpayCustomerId?: string;
+    razorpaySubscriptionId?: string;
+    subscriptionStatus?: "active" | "past_due" | "canceled" | "incomplete" | "trialing" | "created" | "authenticated";
+    subscriptionEndDate?: Date;
     createdAt: Date;
     updatedAt: Date;
     lastSeen: Date;
@@ -34,6 +42,11 @@ const UserSchema = new Schema<IUser>(
             minlength: [6, "Password must be at least 6 characters"],
             select: false, // Don't return password by default
         },
+        hiddenSpacePassword: {
+            type: String,
+            minlength: [4, "PIN/Password must be at least 4 characters"],
+            select: false,
+        },
         image: {
             type: String,
         },
@@ -45,9 +58,33 @@ const UserSchema = new Schema<IUser>(
             enum: ["credentials", "google"],
             default: "credentials",
         },
+        birthDate: {
+            type: Date,
+        },
+        lastBirthdayNotificationYear: {
+            type: Number,
+        },
         lastSeen: {
             type: Date,
             default: Date.now,
+        },
+        plan: {
+            type: String,
+            enum: ["basic", "pro", "premium"],
+            default: "basic",
+        },
+        razorpayCustomerId: {
+            type: String,
+        },
+        razorpaySubscriptionId: {
+            type: String,
+        },
+        subscriptionStatus: {
+            type: String,
+            enum: ["active", "past_due", "canceled", "incomplete", "trialing", "created", "authenticated"],
+        },
+        subscriptionEndDate: {
+            type: Date,
         },
     },
     {
@@ -56,14 +93,19 @@ const UserSchema = new Schema<IUser>(
 );
 
 // Hash password before saving
+// Hash password and hiddenSpacePassword before saving
 UserSchema.pre("save", async function (next) {
-    if (!this.isModified("password") || !this.password) {
-        return next();
-    }
-
     try {
         const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
+
+        if (this.isModified("password") && this.password) {
+            this.password = await bcrypt.hash(this.password, salt);
+        }
+
+        if (this.isModified("hiddenSpacePassword") && this.hiddenSpacePassword) {
+            this.hiddenSpacePassword = await bcrypt.hash(this.hiddenSpacePassword, salt);
+        }
+
         next();
     } catch (error: any) {
         next(error);

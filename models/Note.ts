@@ -8,6 +8,7 @@ export interface INote extends Document {
     content: string; // Markdown content
     attachments: string[]; // Cloudinary URLs
     isGlobal: boolean;
+    isHidden: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -47,6 +48,11 @@ const NoteSchema = new Schema<INote>(
             type: Boolean,
             default: false,
         },
+        isHidden: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
     },
     {
         timestamps: true,
@@ -55,6 +61,7 @@ const NoteSchema = new Schema<INote>(
 
 // Compound indexes for efficient queries
 NoteSchema.index({ userId: 1, isGlobal: 1 });
+NoteSchema.index({ userId: 1, isHidden: 1 });
 NoteSchema.index({ userId: 1, projectId: 1 });
 NoteSchema.index({ userId: 1, createdAt: -1 });
 

@@ -8,6 +8,7 @@ export interface ICommand extends Document {
     description?: string;
     category: "VSCode" | "Git" | "Docker" | "NPM" | "Server" | "Other";
     tags: string[];
+    isHidden: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -47,6 +48,11 @@ const CommandSchema = new Schema<ICommand>(
             type: [String],
             default: [],
         },
+        isHidden: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
     },
     {
         timestamps: true,
@@ -55,6 +61,7 @@ const CommandSchema = new Schema<ICommand>(
 
 // Compound indexes for efficient queries
 CommandSchema.index({ userId: 1, category: 1 });
+CommandSchema.index({ userId: 1, isHidden: 1 });
 CommandSchema.index({ userId: 1, projectId: 1 });
 CommandSchema.index({ userId: 1, createdAt: -1 });
 

@@ -14,6 +14,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +36,7 @@ interface CommunityFormProps {
 export function CommunityForm({ initialData, onSuccess }: CommunityFormProps) {
     const router = useRouter();
     const { toast } = useToast();
+    const { isHiddenMode } = useHiddenSpace();
     const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm<CommunityFormValues>({
@@ -57,7 +59,7 @@ export function CommunityForm({ initialData, onSuccess }: CommunityFormProps) {
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ ...data, isHidden: isHiddenMode }),
             });
 
             if (!res.ok) throw new Error("Failed to save community");

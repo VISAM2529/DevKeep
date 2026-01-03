@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Mail, Check, X, Users, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
 interface InvitationCardProps {
     project: {
@@ -20,6 +22,7 @@ interface InvitationCardProps {
 
 export function InvitationCard({ project, onUpdate }: InvitationCardProps) {
     const { toast } = useToast();
+    const { isHiddenMode } = useHiddenSpace();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleAccept = async () => {
@@ -82,12 +85,17 @@ export function InvitationCard({ project, onUpdate }: InvitationCardProps) {
     const myInvitation = project.sharedWith?.find(s => !s.accepted);
 
     return (
-        <Card className="border-yellow-500/20 bg-yellow-500/5 transition-all">
+        <Card className={cn(
+            "transition-all",
+            isHiddenMode
+                ? "border-purple-500/30 bg-purple-500/5 shadow-[0_0_15px_rgba(168,85,247,0.1)]"
+                : "border-yellow-500/20 bg-yellow-500/5"
+        )}>
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                     <div className="space-y-1">
                         <CardTitle className="text-base font-semibold flex items-center gap-2">
-                            <Users className="h-4 w-4 text-yellow-500" />
+                            <Users className={cn("h-4 w-4", isHiddenMode ? "text-purple-400" : "text-yellow-500")} />
                             {project.name}
                         </CardTitle>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -95,7 +103,10 @@ export function InvitationCard({ project, onUpdate }: InvitationCardProps) {
                             <span>From: {project.userId.email}</span>
                         </div>
                     </div>
-                    <Badge variant="outline" className="text-yellow-500 border-yellow-500/30 text-[10px] uppercase">
+                    <Badge variant="outline" className={cn(
+                        "text-[10px] uppercase",
+                        isHiddenMode ? "text-purple-400 border-purple-500/30" : "text-yellow-500 border-yellow-500/30"
+                    )}>
                         Pending
                     </Badge>
                 </div>

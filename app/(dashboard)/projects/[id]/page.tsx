@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,6 +53,7 @@ export default function ProjectDetailPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { data: session } = useSession();
+    const { isHiddenMode } = useHiddenSpace();
     const [project, setProject] = useState<any>(null);
     const [credentials, setCredentials] = useState<any[]>([]);
     const [commands, setCommands] = useState<any[]>([]);
@@ -205,23 +208,32 @@ export default function ProjectDetailPage() {
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4 md:gap-6">
-                        <div className="relative h-16 w-16 md:h-20 md:w-20 rounded-xl md:rounded-2xl overflow-hidden border border-white/10 bg-secondary/20 shrink-0">
+                        <div className={cn(
+                            "relative h-16 w-16 md:h-20 md:w-20 rounded-xl md:rounded-2xl overflow-hidden shrink-0",
+                            isHiddenMode ? "border border-purple-500/30 bg-black/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]" : "border border-white/10 bg-secondary/20"
+                        )}>
                             {project.logo ? (
                                 <Image src={project.logo} alt={project.name} fill className="object-cover" />
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center">
-                                    <Code2 className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                                    <Code2 className={cn("h-6 w-6 md:h-8 md:w-8", isHiddenMode ? "text-purple-400" : "text-primary")} />
                                 </div>
                             )}
                         </div>
                         <div className="space-y-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                                <h1 className="text-xl md:text-3xl font-bold tracking-tight text-white truncate">{project.name}</h1>
-                                <Badge variant="outline" className={`text-[10px] md:text-xs ${project.status === 'Active' ? 'text-green-500 border-green-500/20 bg-green-500/10' : ''}`}>
+                                <h1 className={cn(
+                                    "text-xl md:text-3xl font-bold tracking-tight truncate",
+                                    isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600" : "text-white"
+                                )}>{project.name}</h1>
+                                <Badge variant="outline" className={`text-[10px] md:text-xs ${project.status === 'Active'
+                                    ? (isHiddenMode ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-green-500 border-green-500/20 bg-green-500/10')
+                                    : ''
+                                    }`}>
                                     {project.status}
                                 </Badge>
                             </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+                            <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1", isHiddenMode ? "text-purple-200/60" : "text-muted-foreground")}>
                                 <span className="text-[10px] md:text-xs font-medium flex items-center gap-1.5">
                                     <Globe className="h-3 md:h-3.5 w-3 md:w-3.5" />
                                     {project.environment}
@@ -311,8 +323,11 @@ export default function ProjectDetailPage() {
                                         }
                                     }
                                 }}
-                                className={`flex-1 md:flex-none h-9 md:h-10 gap-2 text-xs ${!isMeeting && project?.isMeetingActive ? "bg-green-600 hover:bg-green-700 text-white" : ""
-                                    }`}
+                                className={cn(
+                                    "flex-1 md:flex-none h-9 md:h-10 gap-2 text-xs",
+                                    !isMeeting && project?.isMeetingActive ? "bg-green-600 hover:bg-green-700 text-white" : "",
+                                    isHiddenMode && !isMeeting && !project?.isMeetingActive && "bg-purple-600 hover:bg-purple-700 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                                )}
                             >
                                 <Video className="h-3.5 w-3.5" />
                                 {isMeeting ? "End Meeting" : (project?.isMeetingActive ? "Join Meeting" : "Meet")}
@@ -359,17 +374,17 @@ export default function ProjectDetailPage() {
                     <>
                         {/* Overview Stats */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-                            <Card className="col-span-1">
+                            <Card className={cn("col-span-1", isHiddenMode && "bg-black/40 border-purple-500/20 shadow-[0_4px_20px_rgba(0,0,0,0.2)]")}>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
                                     <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Credentials</CardTitle>
-                                    <Lock className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                                    <Lock className={cn("h-3.5 w-3.5 md:h-4 md:w-4", isHiddenMode ? "text-purple-400" : "text-primary")} />
                                 </CardHeader>
                                 <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
                                     <div className="text-xl md:text-2xl font-bold text-white">{credentials.length}</div>
                                     <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Secured items</p>
                                 </CardContent>
                             </Card>
-                            <Card className="col-span-1">
+                            <Card className={cn("col-span-1", isHiddenMode && "bg-black/40 border-purple-500/20 shadow-[0_4px_20px_rgba(0,0,0,0.2)]")}>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
                                     <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Commands</CardTitle>
                                     <Terminal className="h-3.5 w-3.5 md:h-4 md:w-4 text-purple-500" />
@@ -379,7 +394,7 @@ export default function ProjectDetailPage() {
                                     <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Snippets stored</p>
                                 </CardContent>
                             </Card>
-                            <Card className="col-span-2 md:col-span-1">
+                            <Card className={cn("col-span-2 md:col-span-1", isHiddenMode && "bg-black/40 border-purple-500/20 shadow-[0_4px_20px_rgba(0,0,0,0.2)]")}>
                                 <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 md:p-6">
                                     <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">Notes</CardTitle>
                                     <FileText className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-500" />
@@ -394,7 +409,10 @@ export default function ProjectDetailPage() {
                         {/* Content Tabs */}
                         <Tabs defaultValue="credentials" className="w-full" onValueChange={setActiveTab}>
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                                <TabsList className="h-auto p-1 flex overflow-x-auto no-scrollbar justify-start bg-secondary/20 w-fit max-w-full">
+                                <TabsList className={cn(
+                                    "h-auto p-1 flex overflow-x-auto no-scrollbar justify-start w-fit max-w-full",
+                                    isHiddenMode ? "bg-black/40 border border-purple-500/20" : "bg-secondary/20"
+                                )}>
                                     <TabsTrigger value="credentials" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
                                         <Lock className="h-3.5 w-3.5" />
                                         Credentials
@@ -443,7 +461,10 @@ export default function ProjectDetailPage() {
                                     }}>
                                         <Button
                                             size="sm"
-                                            className="h-9 gap-2"
+                                            className={cn(
+                                                "h-9 gap-2",
+                                                isHiddenMode && "bg-purple-600 hover:bg-purple-700 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                                            )}
                                             onClick={() => {
                                                 if (activeTab === 'notes') {
                                                     router.push(`/notes/new?projectId=${params.id}`);
