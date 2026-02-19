@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptions";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Sparkles, Zap, ShieldCheck, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,14 +16,9 @@ interface PricingTableProps {
     subscriptionStatus?: string;
 }
 
-declare global {
-    interface Window {
-        Razorpay: any;
-    }
-}
-
 export function PricingTable({ currentPlan, subscriptionStatus }: PricingTableProps) {
     const [loading, setLoading] = useState<string | null>(null);
+    const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
     const router = useRouter();
     const { isHiddenMode } = useHiddenSpace();
 
@@ -53,7 +48,7 @@ export function PricingTable({ currentPlan, subscriptionStatus }: PricingTablePr
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ planId }),
+                body: JSON.stringify({ planId, billingCycle }),
             });
 
             if (!response.ok) {
@@ -68,13 +63,11 @@ export function PricingTable({ currentPlan, subscriptionStatus }: PricingTablePr
                 subscription_id: data.subscription_id,
                 name: data.name,
                 description: data.description,
-                image: "/logo.png", // Add your logo here
+                image: "/logo.png",
                 handler: function (response: any) {
                     toast.success("Subscription Successful!");
-                    // Ideally we verify payment on server here via another API call
-                    // For now, we rely on webhook or just refresh
                     router.refresh();
-                    router.push("/settings");
+                    router.push("/dashboard");
                 },
                 prefill: {
                     name: data.user_name,
@@ -82,7 +75,7 @@ export function PricingTable({ currentPlan, subscriptionStatus }: PricingTablePr
                     contact: data.contact,
                 },
                 theme: {
-                    color: "#0F172A", // Slate 900
+                    color: "#0F172A",
                 },
             };
 
@@ -99,68 +92,126 @@ export function PricingTable({ currentPlan, subscriptionStatus }: PricingTablePr
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {SUBSCRIPTION_PLANS.map((plan) => {
-                const isCurrent = currentPlan === plan.slug;
-                const isFree = plan.price === 0;
-
-                return (
-                    <Card key={plan.slug} className={cn(
-                        "flex flex-col relative transition-all duration-300",
-                        isCurrent ? "border-primary shadow-lg" : "",
-                        isHiddenMode
-                            ? "bg-black/40 border-purple-500/20 hover:border-purple-500/50 hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]"
-                            : ""
-                    )}>
-                        {isCurrent && (
-                            <div className="absolute top-0 right-0 -mt-2 -mr-2">
-                                <Badge variant="secondary" className={cn(
-                                    "text-primary-foreground",
-                                    isHiddenMode ? "bg-purple-600 text-white" : "bg-primary hover:bg-primary/90"
-                                )}>
-                                    Current Plan
-                                </Badge>
-                            </div>
+        <div className="space-y-10">
+            {/* Billing Toggle */}
+            <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-2 p-1 bg-white/5 border border-white/10 rounded-full">
+                    <button
+                        onClick={() => setBillingCycle("monthly")}
+                        className={cn(
+                            "px-5 py-1.5 rounded-full text-xs font-semibold transition-all",
+                            billingCycle === "monthly"
+                                ? "bg-white text-black"
+                                : "text-zinc-500 hover:text-white"
                         )}
-                        <CardHeader>
-                            <CardTitle className={cn("text-xl", isHiddenMode ? "text-purple-100" : "")}>{plan.name}</CardTitle>
-                            <CardDescription className={isHiddenMode ? "text-purple-300/60" : ""}>
-                                {isFree ? "Forever free" : "Billed monthly"}
-                            </CardDescription>
-                            <div className="mt-4">
-                                <span className={cn("text-4xl font-bold", isHiddenMode ? "text-white" : "")}>${plan.price}</span>
-                                <span className={cn("ml-1", isHiddenMode ? "text-purple-400" : "text-muted-foreground")}>/mo</span>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1">
-                            {plan.trialDays > 0 && (
-                                <div className={cn("mb-4 text-sm font-medium", isHiddenMode ? "text-green-400" : "text-green-600 dark:text-green-400")}>
-                                    {plan.trialDays}-Day Free Trial Included
+                    >
+                        Monthly
+                    </button>
+                    <button
+                        onClick={() => setBillingCycle("annual")}
+                        className={cn(
+                            "px-5 py-1.5 rounded-full text-xs font-semibold transition-all relative",
+                            billingCycle === "annual"
+                                ? "bg-white text-black"
+                                : "text-zinc-500 hover:text-white"
+                        )}
+                    >
+                        Annual
+                        {/* <span className="absolute -top-2.5 -right-3 px-1.5 py-0.5 bg-amber-500 text-[8px] font-black text-black rounded-full">
+                            SAVE 20%
+                        </span> */}
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
+                {SUBSCRIPTION_PLANS.map((plan) => {
+                    const isCurrent = currentPlan === plan.slug;
+                    const isPro = plan.slug === "pro";
+                    const isPremium = plan.slug === "premium";
+                    const isFree = plan.price === 0;
+
+                    // Note: Price conversion or just currency change as requested
+                    const price = billingCycle === "annual"
+                        ? (plan.price * 0.8) // Discounted monthly rate for internal calculation if needed
+                        : plan.price;
+
+                    const displayPrice = billingCycle === "annual"
+                        ? Math.floor(plan.price * 0.8 * 12)
+                        : plan.price;
+
+                    return (
+                        <Card key={plan.slug} className={cn(
+                            "flex flex-col relative transition-all duration-500 rounded-[24px] border border-white/5 group",
+                            isPro
+                                ? "bg-[#111111] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8),0_0_1px_1px_rgba(255,255,255,0.1)] scale-105 z-10"
+                                : "bg-[#1A1A1A]/40 backdrop-blur-sm",
+                            "hover:-translate-y-3 hover:shadow-[0_20px_40px_-15px_rgba(255,255,255,0.08),0_15px_20px_-10px_rgba(255,255,255,0.1),0_1px_0_0_rgba(255,255,255,0.2)] hover:border-white/10",
+                            isCurrent && "ring-1 ring-white/10 shadow-[0_0_20px_rgba(255,255,255,0.02)]"
+                        )}>
+                            <CardHeader className="pt-10 px-8 pb-4 text-left">
+                                <span className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-3 block">{plan.name}</span>
+                                <div className="flex items-baseline gap-2 mb-3">
+                                    <span className="text-5xl font-bold text-white tracking-tight">₹{displayPrice}</span>
+                                    <span className="text-zinc-500 text-sm font-medium">/{billingCycle === "annual" ? "year" : "month"}</span>
                                 </div>
-                            )}
-                            <ul className="space-y-3">
-                                {plan.features.map((feature, i) => (
-                                    <li key={i} className={cn("flex items-start gap-2 text-sm", isHiddenMode ? "text-purple-100/80" : "text-foreground/80")}>
-                                        <Check className={cn("h-4 w-4 shrink-0 mt-0.5", isHiddenMode ? "text-purple-400" : "text-primary")} />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            <Button
-                                className={cn("w-full", isHiddenMode && !isCurrent ? "bg-purple-600 hover:bg-purple-700 text-white border-none" : "")}
-                                variant={isCurrent ? "outline" : "default"}
-                                disabled={loading === plan.slug || isCurrent}
-                                onClick={() => !isCurrent && !isFree && onSubscribe(plan.slug)}
-                            >
-                                {loading === plan.slug && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isCurrent ? "Active" : isFree ? "Get Started" : `Upgrade to ${plan.name}`}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                );
-            })}
+                                <p className="text-zinc-500 text-[13px] leading-relaxed font-medium">
+                                    {isFree ? "Perfect for individuals and small side projects" :
+                                        isPro ? "Perfect for Small Teams, Startups, and Growing Businesses" :
+                                            "Enterprise-grade solutions for large scale organizations"}
+                                </p>
+                            </CardHeader>
+
+                            <CardContent className="flex-1 px-8 py-4">
+                                <span className="text-zinc-300 text-[11px] font-bold uppercase tracking-widest mb-6 block">Features Included:</span>
+                                <ul className="space-y-4">
+                                    {plan.features.map((feature, i) => (
+                                        <li key={i} className="flex items-start gap-3 text-[13px] text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                                            <div className={cn(
+                                                "mt-0.5 rounded-full p-0.5 transition-all duration-300",
+                                                isPro || isPremium ? "bg-white text-black" : "bg-zinc-800 text-zinc-500"
+                                            )}>
+                                                <Check className="h-2.5 w-2.5" strokeWidth={5} />
+                                            </div>
+                                            <span className="leading-snug">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                {plan.trialDays > 0 && !isCurrent && (
+                                    <div className="mt-6 flex items-center gap-2 text-[11px] text-zinc-500 font-medium">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        <span>Start {plan.trialDays}-day free trial</span>
+                                    </div>
+                                )}
+                            </CardContent>
+
+                            <CardFooter className="px-8 pb-10 pt-4">
+                                <Button
+                                    className={cn(
+                                        "w-full h-12 rounded-[14px] font-bold transition-all duration-300",
+                                        (isPro || isPremium)
+                                            ? "bg-white text-black hover:bg-zinc-200 hover:scale-[1.02] shadow-[0_10px_20px_-10px_rgba(255,255,255,0.2)]"
+                                            : "bg-zinc-900 text-white hover:bg-black border border-white/5",
+                                        isCurrent && "opacity-40 cursor-default grayscale"
+                                    )}
+                                    disabled={loading === plan.slug || isCurrent}
+                                    onClick={() => !isCurrent && !isFree && onSubscribe(plan.slug)}
+                                >
+                                    {loading === plan.slug ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : isCurrent ? (
+                                        "Your Current Plan"
+                                    ) : isFree ? (
+                                        "Get Started"
+                                    ) : (
+                                        `Upgrade to ${plan.name}`
+                                    )}
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    );
+                })}
+            </div>
         </div>
     );
 }

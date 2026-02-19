@@ -16,6 +16,7 @@ export async function GET(req: Request) {
 
         const notifications = await Notification.find({ recipientId: session.user.id })
             .populate("senderId", "name image")
+            .populate("projectId", "name")
             .sort({ createdAt: -1 })
             .limit(50);
 

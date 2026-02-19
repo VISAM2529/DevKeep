@@ -102,13 +102,13 @@ export default function ProjectsPage() {
             <div className="flex items-center gap-4">
                 <div className="relative group flex-1 max-w-md">
                     <Search className={cn(
-                        "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",
+                        "absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none",
                         isHiddenMode ? "text-purple-400" : "text-muted-foreground"
                     )} />
                     <Input
                         placeholder="Search by name or tech stack..."
                         className={cn(
-                            "pl-10",
+                            "pl-12",
                             isHiddenMode
                                 ? "bg-black/40 border-purple-500/20 text-purple-100 placeholder:text-purple-500/50 focus-visible:ring-purple-500/50"
                                 : "bg-secondary/20 border-white/5"

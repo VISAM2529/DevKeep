@@ -177,14 +177,14 @@ export default function CredentialsPage() {
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                 <div className="relative w-full md:w-96 group">
                     <Search className={cn(
-                        "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors",
+                        "absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors pointer-events-none",
                         isHiddenMode ? "text-purple-400/50 group-hover:text-purple-400" : "text-muted-foreground"
                     )} />
                     <Input
                         placeholder="Search credentials..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
+                        className="pl-12"
                     />
                 </div>
                 <Button variant="outline" className="h-10 px-4 gap-2 text-sm font-medium w-full md:w-auto">

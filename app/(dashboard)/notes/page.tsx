@@ -192,7 +192,7 @@ export default function NotesPage() {
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                 <div className="relative w-full md:w-96 group">
                     <Search className={cn(
-                        "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors",
+                        "absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors pointer-events-none",
                         isHiddenMode ? "text-purple-400/50 group-hover:text-purple-400" : "text-muted-foreground"
                     )} />
                     <Input
@@ -200,7 +200,7 @@ export default function NotesPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className={cn(
-                            "pl-9 transition-all duration-300",
+                            "pl-12 transition-all duration-300",
                             isHiddenMode
                                 ? "bg-black/40 border-purple-500/20 text-purple-100 placeholder:text-purple-500/30 focus:border-purple-500/50 focus:ring-purple-500/20"
                                 : "bg-white/5 border-white/10 text-white placeholder:text-muted-foreground focus:border-white/20"
