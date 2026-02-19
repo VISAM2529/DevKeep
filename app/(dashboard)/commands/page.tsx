@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CommandCard } from "@/components/commands/CommandCard";
+
 import { CommandForm } from "@/components/commands/CommandForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,7 +158,7 @@ export default function CommandsPage() {
                             New Snippet
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>
                                 {selectedCommand ? "Recode Snippet" : "Store New Snippet"}
@@ -168,6 +168,7 @@ export default function CommandsPage() {
                             </DialogDescription>
                         </DialogHeader>
                         <CommandForm
+                            key={selectedCommand ? selectedCommand._id : "new-snippet"}
                             initialData={selectedCommand}
                             projects={projects}
                             onSuccess={handleSuccess}
@@ -184,7 +185,7 @@ export default function CommandsPage() {
                         isHiddenMode ? "text-purple-400/50 group-hover:text-purple-400" : "text-muted-foreground"
                     )} />
                     <Input
-                        placeholder="Search snippets..."
+                        placeholder="Search by title, tag, or content..." // Updated placeholder
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className={cn(
@@ -233,16 +234,6 @@ export default function CommandsPage() {
                             </TabsTrigger>
                         ))}
                     </TabsList>
-
-                    <div className="relative group max-w-md w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                            placeholder="Filter snippets..."
-                            className="pl-9 h-10 bg-secondary/20 border-white/5"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
                 </div>
 
                 <div className="mt-8">
@@ -276,7 +267,14 @@ export default function CommandsPage() {
                                                 <Terminal className="h-5 w-5 md:h-6 md:w-6" />
                                             </div>
                                             <div>
-                                                <h3 className={cn("text-base md:text-lg font-semibold transition-colors", isHiddenMode ? "text-purple-100 group-hover:text-purple-50" : "text-white group-hover:text-primary-foreground")}>{cmd.title}</h3>
+                                              <h3
+  className={cn(
+    "text-base md:text-lg font-semibold transition-colors group-hover:text-white",
+    isHiddenMode ? "text-purple-100" : "text-white"
+  )}
+>
+  {cmd.title}
+</h3>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className={cn("text-xs px-2 py-0.5 rounded-full border", isHiddenMode ? "bg-purple-500/10 text-purple-300 border-purple-500/20" : "bg-white/5 text-white/50 border-white/5")}>
                                                         {cmd.type}

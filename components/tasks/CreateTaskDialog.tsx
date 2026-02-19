@@ -198,12 +198,30 @@ export function CreateTaskDialog({
                                         {deadline ? format(deadline, "PPP") : <span>Pick a date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
+                                <PopoverContent className="w-auto p-0" align="start">
                                     <Calendar
                                         mode="single"
                                         selected={deadline}
                                         onSelect={setDeadline}
                                         initialFocus
+                                        classNames={{
+                                            head_cell: "w-8 font-normal text-[0.8rem] text-muted-foreground",
+                                            cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                                            day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                        }}
+                                        components={{
+                                            Head: () => (
+                                                <thead className="w-full">
+                                                    <tr className="flex w-full justify-around">
+                                                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                                                            <th key={day} className="w-8 text-[0.8rem] font-normal text-muted-foreground">
+                                                                {day}
+                                                            </th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                            )
+                                        }}
                                     />
                                 </PopoverContent>
                             </Popover>

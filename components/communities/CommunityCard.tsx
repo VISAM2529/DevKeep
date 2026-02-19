@@ -52,9 +52,11 @@ export function CommunityCard({ community, onDelete }: CommunityCardProps) {
     const [checkingStatus, setCheckingStatus] = useState(true);
     const [showClockOutModal, setShowClockOutModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showLeaveModal, setShowLeaveModal] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-    const isOwner = session?.user?.id === community.ownerId;
+    const ownerId = typeof community.ownerId === 'string' ? community.ownerId : (community.ownerId as any)?._id || (community.ownerId as any)?.id;
+    const isOwner = session?.user?.id === ownerId;
 
     useEffect(() => {
         checkAttendanceStatus();
@@ -137,6 +139,36 @@ export function CommunityCard({ community, onDelete }: CommunityCardProps) {
         }
     };
 
+    const handleLeave = async () => {
+        setLoading(true);
+        try {
+            // Using POST to conform to REST but could be DELETE on sub-resource
+            const res = await fetch(`/api/communities/${community._id}/leave`, {
+                method: "POST",
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Failed to leave community");
+            }
+
+            toast({
+                title: "Left Community",
+                description: `You have successfully left ${community.name}.`,
+            });
+            onDelete?.(community._id); // This will remove it from the list in parent
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message,
+            });
+        } finally {
+            setLoading(false);
+            setShowLeaveModal(false);
+        }
+    };
+
     return (
         <Card className={cn(
             "group relative overflow-hidden transition-all p-6 rounded-xl flex flex-col h-full",
@@ -183,6 +215,14 @@ export function CommunityCard({ community, onDelete }: CommunityCardProps) {
                                     onClick={() => setShowDeleteModal(true)}
                                 >
                                     <Trash2 className="h-4 w-4" /> Delete Community
+                                </DropdownMenuItem>
+                            )}
+                            {!isOwner && (
+                                <DropdownMenuItem
+                                    className="text-orange-500 gap-2 cursor-pointer focus:bg-orange-500/10 focus:text-orange-600"
+                                    onClick={() => setShowLeaveModal(true)}
+                                >
+                                    <LogOut className="h-4 w-4" /> Leave Community
                                 </DropdownMenuItem>
                             )}
                         </DropdownMenuContent>
@@ -264,6 +304,17 @@ export function CommunityCard({ community, onDelete }: CommunityCardProps) {
                 description={`You are about to delete ${community.name}. This is permanent and will remove all messages and attendance records.`}
                 confirmText="Delete Community"
                 variant="destructive"
+            />
+
+            <ConfirmModal
+                isOpen={showLeaveModal}
+                onClose={() => setShowLeaveModal(false)}
+                onConfirm={handleLeave}
+                isLoading={loading}
+                title="Leave Community?"
+                description={`Are you sure you want to leave ${community.name}? You will lose access to all messages and content.`}
+                confirmText="Leave Community"
+                variant="destructive" // Or warning if supported, but typically destructive logic applies
             />
 
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

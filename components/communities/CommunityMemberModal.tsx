@@ -113,6 +113,33 @@ export function CommunityMemberModal({
         }
     };
 
+    const handleRoleChange = async (memberId: string, newRole: "admin" | "member") => {
+        try {
+            const res = await fetch(`/api/communities/${communityId}/members`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ memberId, role: newRole }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Failed to update role");
+            }
+
+            toast({
+                title: "Role Updated",
+                description: `Member role updated to ${newRole}.`,
+            });
+            onUpdate();
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message,
+            });
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-md">
@@ -178,6 +205,9 @@ export function CommunityMemberModal({
                             // If owner, show distinct
                             const isMemberOwner = memberId === ownerId;
 
+                            // Can edit this member? Admin/Owner only, and cannot edit owner.
+                            const canEdit = isAdmin && !isMemberOwner && memberId !== currentUserId;
+
                             return (
                                 <div
                                     key={memberId}
@@ -193,23 +223,46 @@ export function CommunityMemberModal({
                                         <div className="flex flex-col">
                                             <span className="text-sm font-medium flex items-center gap-2">
                                                 {memberName}
-                                                {member.role === 'admin' && <Shield className="h-3 w-3 text-primary" />}
+                                                {!canEdit && member.role === 'admin' && <Shield className="h-3 w-3 text-primary" />}
                                                 {isMemberOwner && <Badge variant="outline" className="text-[10px] h-4 px-1">Owner</Badge>}
                                             </span>
                                             <span className="text-[10px] text-muted-foreground">{memberEmail}</span>
                                         </div>
                                     </div>
 
-                                    {isAdmin && !isMemberOwner && memberId !== currentUserId && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleRemove(memberId)}
-                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {canEdit ? (
+                                            <Select
+                                                defaultValue={member.role}
+                                                onValueChange={(val) => handleRoleChange(memberId, val as "admin" | "member")}
+                                            >
+                                                <SelectTrigger className="h-7 w-[90px] text-[10px]">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="member">Member</SelectItem>
+                                                    <SelectItem value="admin">Admin</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            !isMemberOwner && (
+                                                <Badge variant="secondary" className="capitalize text-[10px] h-6">
+                                                    {member.role}
+                                                </Badge>
+                                            )
+                                        )}
+
+                                        {isAdmin && !isMemberOwner && memberId !== currentUserId && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleRemove(memberId)}
+                                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })}

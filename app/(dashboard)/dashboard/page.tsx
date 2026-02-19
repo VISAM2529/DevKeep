@@ -188,9 +188,9 @@ export default function DashboardPage() {
                                         "flex items-center justify-between p-2 md:p-3 rounded-lg transition-colors group",
                                         isHiddenMode ? "hover:bg-purple-500/10" : "hover:bg-white/5"
                                     )}>
-                                        <div className="flex items-center gap-2 md:gap-3">
+                                        <div className="flex items-center gap-2 md:gap-3 min-w-0">
                                             <div className={cn(
-                                                "h-7 w-7 md:h-8 md:w-8 rounded-md flex items-center justify-center border transition-colors",
+                                                "h-7 w-7 md:h-8 md:w-8 rounded-md flex items-center justify-center border transition-colors shrink-0",
                                                 isHiddenMode
                                                     ? "bg-purple-900/20 border-purple-500/20 text-purple-400"
                                                     : "bg-white/5 border-white/5 text-white/70"
@@ -200,9 +200,17 @@ export default function DashboardPage() {
                                                 {item.type === "Command" && <Terminal className="h-3.5 w-3.5 md:h-4 md:w-4" />}
                                                 {item.type === "Note" && <FileText className="h-3.5 w-3.5 md:h-4 md:w-4" />}
                                             </div>
-                                            <div className="min-w-0">
-                                                <div className={cn("text-xs md:text-sm font-medium truncate max-w-[120px] md:max-w-none", isHiddenMode ? "text-purple-100" : "text-white")}>{item.name}</div>
-                                                <div className={cn("text-[10px] md:text-xs", isHiddenMode ? "text-purple-400/60" : "text-muted-foreground")}>{item.type}</div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className={cn(
+                                                    "text-xs md:text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap",
+                                                    isHiddenMode ? "text-purple-100" : "text-white"
+                                                )} title={item.name}>
+                                                    {item.name}
+                                                </div>
+                                                <div className={cn(
+                                                    "text-[10px] md:text-xs",
+                                                    isHiddenMode ? "text-purple-400/60" : "text-muted-foreground"
+                                                )}>{item.type}</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 md:gap-3">

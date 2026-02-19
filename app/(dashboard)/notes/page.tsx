@@ -24,6 +24,10 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 
+const stripHtmlTags = (html: string) => {
+    return html.replace(/<[^>]+>/g, '');
+};
+
 export default function NotesPage() {
     const { toast } = useToast();
     const [notes, setNotes] = useState<any[]>([]);
@@ -139,7 +143,6 @@ export default function NotesPage() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">Documentation</h1>
                     <h1 className={cn(
                         "text-2xl md:text-3xl font-bold tracking-tight transition-colors",
                         isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-200" : "text-white"
@@ -240,7 +243,7 @@ export default function NotesPage() {
                                 </CardHeader>
                                 <CardContent className="p-4 md:p-6 pt-2">
                                     <p className="text-sm text-muted-foreground line-clamp-3">
-                                        {note.content?.replace(/[*#_`]/g, '') || "No content"}
+                                        {note.content ? stripHtmlTags(note.content).replace(/[*#_`]/g, '') : "No content"}
                                     </p>
                                     {note.attachments?.length > 0 && (
                                         <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">

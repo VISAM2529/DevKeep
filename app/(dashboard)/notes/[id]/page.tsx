@@ -189,7 +189,7 @@ export default function NoteEditorPage() {
             <div className="flex flex-col gap-6">
                 <div>
                     <Link
-                        href="/notes"
+                        href="/projects"
                         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors mb-4"
                     >
                         <ChevronLeft className="h-4 w-4" />

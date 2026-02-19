@@ -13,6 +13,8 @@ const commandSchema = z.object({
     description: z.string().optional(),
     category: z.enum(["VSCode", "Git", "Docker", "NPM", "Server", "Other"]).optional(),
     tags: z.array(z.string()).optional(),
+    code: z.string().optional(),
+    language: z.string().optional(),
     isHidden: z.boolean().optional(),
 });
 

@@ -184,6 +184,7 @@ export default function CredentialsPage() {
                         placeholder="Search credentials..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
                     />
                 </div>
                 <Button variant="outline" className="h-10 px-4 gap-2 text-sm font-medium w-full md:w-auto">

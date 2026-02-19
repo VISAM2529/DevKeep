@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -27,9 +27,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { CodeEditor } from "@/components/commands/CodeEditor";
 
 const commandSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters."),
+    code: z.string(),
+    language: z.string(),
     command: z.string().min(1, "Command content is required."),
     description: z.string(),
     category: z.enum(["VSCode", "Git", "Docker", "NPM", "Server", "Other"]),
@@ -56,6 +59,8 @@ export function CommandForm({ initialData, projects = [], onSuccess }: CommandFo
         resolver: zodResolver(commandSchema),
         defaultValues: {
             title: initialData?.title || "",
+            code: initialData?.code || "",
+            language: initialData?.language || "javascript",
             command: initialData?.command || "",
             description: initialData?.description || "",
             category: initialData?.category || "Other",
@@ -63,6 +68,45 @@ export function CommandForm({ initialData, projects = [], onSuccess }: CommandFo
             projectId: initialData?.projectId || "",
         },
     });
+
+
+
+    // Load draft checks
+    useEffect(() => {
+        if (!initialData?._id && typeof window !== "undefined") {
+            const savedDraft = localStorage.getItem("snippet_draft");
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    // Ensure defaults are respected if keys missing
+                    form.reset({
+                        title: parsed.title || "",
+                        code: parsed.code || "",
+                        language: parsed.language || "javascript",
+                        command: parsed.command || "",
+                        description: parsed.description || "",
+                        category: parsed.category || "Other",
+                        tags: parsed.tags || [],
+                        projectId: parsed.projectId || "",
+                    });
+                } catch (e) {
+                    console.error("Failed to parse draft", e);
+                }
+            }
+        }
+    }, [initialData, form]);
+
+    // Save draft watcher
+    useEffect(() => {
+        if (!initialData?._id) {
+            const subscription = form.watch((value) => {
+                if (typeof window !== "undefined") {
+                    localStorage.setItem("snippet_draft", JSON.stringify(value));
+                }
+            });
+            return () => subscription.unsubscribe();
+        }
+    }, [initialData, form]);
 
     const addTag = () => {
         const val = tagInput.trim().toLowerCase();
@@ -94,6 +138,11 @@ export function CommandForm({ initialData, projects = [], onSuccess }: CommandFo
             });
 
             if (!res.ok) throw new Error("Failed to save command snippet");
+
+            // Clear draft if it was a new snippet
+            if (!initialData?._id) {
+                localStorage.removeItem("snippet_draft");
+            }
 
             toast({
                 title: initialData?._id ? "Snippet Recoded" : "Snippet Initialized",
@@ -132,6 +181,25 @@ export function CommandForm({ initialData, projects = [], onSuccess }: CommandFo
                                         <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input placeholder="E.g. Start Microservice" className="pl-9" {...field} />
                                     </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="code"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Snippet Code</FormLabel>
+                                <FormControl>
+                                    <CodeEditor
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        language={form.watch("language")}
+                                        onLanguageChange={(val) => form.setValue("language", val)}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

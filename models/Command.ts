@@ -6,6 +6,8 @@ export interface ICommand extends Document {
     title: string;
     command: string;
     description?: string;
+    code?: string;
+    language?: string;
     category: "VSCode" | "Git" | "Docker" | "NPM" | "Server" | "Other";
     tags: string[];
     isHidden: boolean;
@@ -38,6 +40,14 @@ const CommandSchema = new Schema<ICommand>(
         description: {
             type: String,
             trim: true,
+        },
+        code: {
+            type: String,
+            trim: true,
+        },
+        language: {
+            type: String,
+            default: "javascript",
         },
         category: {
             type: String,
