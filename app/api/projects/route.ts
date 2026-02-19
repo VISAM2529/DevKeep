@@ -5,7 +5,7 @@ import connectDB from "@/lib/mongodb";
 import Project from "@/models/Project";
 import mongoose from "mongoose";
 import { z } from "zod";
-
+//sample
 const projectSchema = z.object({
     name: z.string().min(1, "Project name is required"),
     description: z.string().optional(),
