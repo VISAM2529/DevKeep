@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreHorizontal, Calendar, User as UserIcon, LayoutGrid, BarChart3, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Calendar, User as UserIcon, LayoutGrid, BarChart3, Trash2, Pencil } from "lucide-react";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { TaskTimeline } from "./TaskTimeline";
@@ -21,9 +21,11 @@ import { useToast } from "@/hooks/use-toast";
 
 interface TaskBoardProps {
     projectId: string;
+    project: any;
+    currentUser: any;
 }
 
-export function TaskBoard({ projectId }: TaskBoardProps) {
+export function TaskBoard({ projectId, project, currentUser }: TaskBoardProps) {
     const { toast } = useToast();
     const [tasks, setTasks] = useState<any[]>([]);
     const [team, setTeam] = useState<any[]>([]);
@@ -31,7 +33,16 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<"board" | "timeline">("board");
     const [taskToDelete, setTaskToDelete] = useState<any>(null);
+    const [taskToEdit, setTaskToEdit] = useState<any>(null);
     const [isDeletingTask, setIsDeletingTask] = useState(false);
+
+    const getUserId = (user: any) => typeof user === 'object' ? user?._id : user;
+    const currentUserId = currentUser?.id;
+    const ownerId = getUserId(project?.userId);
+    const isOwner = ownerId?.toString() === currentUserId?.toString();
+    const collaborator = project?.sharedWith?.find((c: any) => c.email === currentUser?.email?.toLowerCase());
+    const userRole = collaborator?.role;
+    const isAdminOrLead = isOwner || userRole === 'Admin' || userRole === 'Project Lead';
 
     const fetchTasks = async () => {
         try {
@@ -70,6 +81,16 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
             destination.droppableId === source.droppableId &&
             destination.index === source.index
         ) {
+            return;
+        }
+
+        // Verify permission: Admin/Lead OR Assignee can move
+        const taskToMove = tasks.find(t => t._id === draggableId);
+        if (!taskToMove) return;
+
+        const isAssignee = getUserId(taskToMove.assigneeId)?.toString() === currentUserId?.toString();
+        if (!isAdminOrLead && !isAssignee) {
+            toast({ variant: "destructive", title: "Permission Denied", description: "You can only move your own tasks." });
             return;
         }
 
@@ -121,6 +142,16 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
         }
     };
 
+    const openCreateTask = () => {
+        setTaskToEdit(null);
+        setIsCreateOpen(true);
+    };
+
+    const openEditTask = (task: any) => {
+        setTaskToEdit(task);
+        setIsCreateOpen(true);
+    };
+
     const columns = [
         { id: "To Do", title: "To Do", color: "bg-secondary/50" },
         { id: "In Progress", title: "In Progress", color: "bg-blue-500/10" },
@@ -155,14 +186,16 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
                         </Button>
                     </div>
                 </div>
-                <Button
-                    size="sm"
-                    onClick={() => setIsCreateOpen(true)}
-                    className="gap-2 h-9 md:h-8 w-full sm:w-auto font-medium"
-                >
-                    <Plus className="h-4 w-4" />
-                    New Task
-                </Button>
+                {isAdminOrLead && (
+                    <Button
+                        size="sm"
+                        onClick={openCreateTask}
+                        className="gap-2 h-9 md:h-8 w-full sm:w-auto font-medium"
+                    >
+                        <Plus className="h-4 w-4" />
+                        New Task
+                    </Button>
+                )}
             </div>
 
             {viewMode === "board" ? (
@@ -187,72 +220,103 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
                                         >
                                             {tasks
                                                 .filter((t) => t.status === col.id)
-                                                .map((task, index) => (
-                                                    <Draggable key={task._id} draggableId={task._id} index={index}>
-                                                        {(provided, snapshot) => (
-                                                            <Card
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                className={`cursor-grab active:cursor-grabbing hover:border-primary/50 transition-all ${snapshot.isDragging ? "shadow-lg rotate-2 ring-2 ring-primary" : ""
-                                                                    }`}
-                                                                style={provided.draggableProps.style}
-                                                            >
-                                                                <CardHeader className="p-3 pb-2 space-y-1">
-                                                                    <div className="flex justify-between items-start">
-                                                                        <Badge
-                                                                            variant="outline"
-                                                                            className={`text-[10px] px-1.5 py-0 h-5 ${task.priority === 'High' ? 'text-red-500 border-red-500/20 bg-red-500/10' :
-                                                                                task.priority === 'Medium' ? 'text-yellow-500 border-yellow-500/20 bg-yellow-500/10' :
-                                                                                    'text-blue-500 border-blue-500/20 bg-blue-500/10'
-                                                                                }`}
-                                                                        >
-                                                                            {task.priority}
-                                                                        </Badge>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 text-muted-foreground hover:text-red-500 -mt-1 -mr-1"
-                                                                            onClick={() => setTaskToDelete(task)}
-                                                                        >
-                                                                            <Trash2 className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                    <CardTitle className="text-sm font-medium leading-tight">
-                                                                        {task.title}
-                                                                    </CardTitle>
-                                                                </CardHeader>
-                                                                <CardContent className="p-3 pt-0 pb-3">
-                                                                    {task.description && (
-                                                                        <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                                                                            {task.description}
-                                                                        </p>
-                                                                    )}
-                                                                    <div className="flex items-center justify-between">
-                                                                        <div className="flex items-center gap-2">
-                                                                            {task.assigneeId ? (
-                                                                                <Avatar className="h-5 w-5">
-                                                                                    <AvatarImage src={task.assigneeId.image} />
-                                                                                    <AvatarFallback className="text-[8px]">{getInitials(task.assigneeId.name)}</AvatarFallback>
-                                                                                </Avatar>
-                                                                            ) : (
-                                                                                <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center">
-                                                                                    <UserIcon className="h-3 w-3 text-muted-foreground" />
+                                                .map((task, index) => {
+                                                    const isAssignee = getUserId(task.assigneeId)?.toString() === currentUserId?.toString();
+                                                    const canMove = isAdminOrLead || isAssignee;
+
+                                                    return (
+                                                        <Draggable key={task._id} draggableId={task._id} index={index} isDragDisabled={!canMove}>
+                                                            {(provided, snapshot) => (
+                                                                <Card
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    className={`transition-all group ${snapshot.isDragging ? "shadow-lg rotate-2 ring-2 ring-primary" : ""} ${!canMove ? "cursor-default border-border/60" : "cursor-grab active:cursor-grabbing hover:border-primary/50"}`}
+                                                                    style={provided.draggableProps.style}
+                                                                >
+                                                                    <CardHeader className="p-3 pb-2 space-y-1">
+                                                                        <div className="flex justify-between items-start">
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className={`text-[10px] px-1.5 py-0 h-5 ${task.priority === 'High' ? 'text-red-500 border-red-500/20 bg-red-500/10' :
+                                                                                    task.priority === 'Medium' ? 'text-yellow-500 border-yellow-500/20 bg-yellow-500/10' :
+                                                                                        'text-blue-500 border-blue-500/20 bg-blue-500/10'
+                                                                                    }`}
+                                                                            >
+                                                                                {task.priority}
+                                                                            </Badge>
+                                                                            {isAdminOrLead && (
+                                                                                <div className="flex items-center -mt-1 -mr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                                                                        onClick={() => openEditTask(task)}
+                                                                                    >
+                                                                                        <Pencil className="h-3 w-3" />
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-6 w-6 text-muted-foreground hover:text-red-500"
+                                                                                        onClick={() => setTaskToDelete(task)}
+                                                                                    >
+                                                                                        <Trash2 className="h-3 w-3" />
+                                                                                    </Button>
                                                                                 </div>
                                                                             )}
+                                                                        </div>
+                                                                        <CardTitle className="text-sm font-medium leading-tight">
+                                                                            {task.title}
+                                                                        </CardTitle>
+                                                                    </CardHeader>
+                                                                    <CardContent className="p-3 pt-0 pb-3">
+                                                                        {task.description && (
+                                                                            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                                                                                {task.description}
+                                                                            </p>
+                                                                        )}
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-2">
+                                                                                {task.assigneeId ? (
+                                                                                    <div className="flex items-center gap-1.5">
+                                                                                        <div title={`Assigned to ${task.assigneeId.name || 'Unknown'}`}>
+                                                                                            <Avatar className="h-5 w-5 border border-border">
+                                                                                                <AvatarImage src={task.assigneeId.image} />
+                                                                                                <AvatarFallback className="text-[8px]">{getInitials(task.assigneeId.name || "")}</AvatarFallback>
+                                                                                            </Avatar>
+                                                                                        </div>
+                                                                                        {task.creatorId && getUserId(task.creatorId) !== getUserId(task.assigneeId) && (
+                                                                                            <>
+                                                                                                <span className="text-[10px] text-muted-foreground/60">by</span>
+                                                                                                <div title={`Assigned by ${task.creatorId.name || 'Unknown'}`}>
+                                                                                                    <Avatar className="h-4 w-4 opacity-70 hover:opacity-100 transition-opacity border border-border">
+                                                                                                        <AvatarImage src={task.creatorId.image} />
+                                                                                                        <AvatarFallback className="text-[6px]">{getInitials(task.creatorId.name || "")}</AvatarFallback>
+                                                                                                    </Avatar>
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center translate-y-[1px]" title="Unassigned">
+                                                                                        <UserIcon className="h-3 w-3 text-muted-foreground" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                             {task.deadline && (
-                                                                                <div className="flex items-center text-[10px] text-muted-foreground">
-                                                                                    <Calendar className="h-3 w-3 mr-1" />
+                                                                                <div className="flex items-center text-[10px] text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-md" title={`Due: ${new Date(task.deadline).toLocaleDateString()}`}>
+                                                                                    <Calendar className="h-3 w-3 mr-1 opacity-70" />
                                                                                     {new Date(task.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                                                                 </div>
                                                                             )}
                                                                         </div>
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
-                                                    </Draggable>
-                                                ))}
+                                                                    </CardContent>
+                                                                </Card>
+                                                            )}
+                                                        </Draggable>
+                                                    );
+                                                })}
                                             {provided.placeholder}
                                         </div>
                                     )}
@@ -267,10 +331,14 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
 
             <CreateTaskDialog
                 isOpen={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
+                onClose={() => {
+                    setIsCreateOpen(false);
+                    setTaskToEdit(null);
+                }}
                 projectId={projectId}
                 collaborators={team}
                 onSuccess={fetchTasks}
+                task={taskToEdit}
             />
             <ConfirmModal
                 isOpen={!!taskToDelete}

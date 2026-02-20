@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -30,30 +30,18 @@ interface CreateTaskDialogProps {
     isOpen: boolean;
     onClose: () => void;
     projectId: string;
-    collaborators: any[]; // List of potential assignees
+    collaborators: any[];
     onSuccess: () => void;
+    task?: any; // Optional task for editing
 }
 
 export function CreateTaskDialog({
     isOpen,
     onClose,
     projectId,
-    collaborators, // Expects full User objects or { email, name, _id } if possible?
-    // Project.sharedWith is { email, role... }. We need actual Users to assign ID.
-    // The API allows getting collaborators with user details? GET /api/projects/:id usually returns project.
-    // To assign properly, we need User IDs. `sharedWith` only has emails.
-    // We might need to fetch `User` objects matching these emails or rely on `CollaboratorModal` logic.
-    // Ideally, `GET /api/projects/:id` should populate `sharedWith.userId` if we changed schema to use Ref.
-    // But schema uses `email`.
-    // WORKAROUND: We can search users by email OR just assign by email and backend resolves?
-    // Backend `Task` model expects `assigneeId` (ObjectId).
-    // Backend POST `tasks` expects `assigneeId`.
-    // So frontend must send `assigneeId`.
-    // Does `Project` populate anything? No, it's just strings.
-    // We need a way to get User IDs from the collaborator emails.
-    // Maybe a new API endpoint `GET /api/projects/:id/users` to get full profiles of team?
-    // OR update specific GET project to return mapped users.
+    collaborators,
     onSuccess,
+    task,
 }: CreateTaskDialogProps) {
     const { toast } = useToast();
     const [title, setTitle] = useState("");
@@ -64,11 +52,25 @@ export function CreateTaskDialog({
     const [deadline, setDeadline] = useState<Date | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Temp: We need a way to select assignees.
-    // If we only have emails, we can't select ID easily. 
-    // I'll assume for this turn that `collaborators` passed in will be specialized objects from the parent page 
-    // which might need to fetch them.
-    // Actually, let's implement a `useProjectUsers` hook or fetching logic in parent.
+    useEffect(() => {
+        if (task) {
+            setTitle(task.title || "");
+            setDescription(task.description || "");
+            setStatus(task.status || "To Do");
+            setPriority(task.priority || "Medium");
+            // Handle populated assignee
+            setAssigneeId(typeof task.assigneeId === 'object' ? task.assigneeId?._id : (task.assigneeId || ""));
+            setDeadline(task.deadline ? new Date(task.deadline) : undefined);
+        } else {
+            // Reset for new task
+            setTitle("");
+            setDescription("");
+            setStatus("To Do");
+            setPriority("Medium");
+            setAssigneeId("");
+            setDeadline(undefined);
+        }
+    }, [task, isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,8 +78,14 @@ export function CreateTaskDialog({
 
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/projects/${projectId}/tasks`, {
-                method: "POST",
+            const url = task
+                ? `/api/projects/${projectId}/tasks/${task._id}`
+                : `/api/projects/${projectId}/tasks`;
+
+            const method = task ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     title,
@@ -91,19 +99,23 @@ export function CreateTaskDialog({
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || "Failed to create task");
+                throw new Error(data.error || `Failed to ${task ? "update" : "create"} task`);
             }
 
-            toast({ title: "Task Created", description: "New task added to board." });
+            toast({
+                title: task ? "Task Updated" : "Task Created",
+                description: task ? "Task details have been updated." : "New task added to board."
+            });
             onSuccess();
             onClose();
-            // Reset form
-            setTitle("");
-            setDescription("");
-            setStatus("To Do");
-            setPriority("Medium");
-            setAssigneeId("");
-            setDeadline(undefined);
+            if (!task) {
+                setTitle("");
+                setDescription("");
+                setStatus("To Do");
+                setPriority("Medium");
+                setAssigneeId("");
+                setDeadline(undefined);
+            }
         } catch (error: any) {
             toast({ variant: "destructive", title: "Error", description: error.message });
         } finally {
@@ -115,8 +127,10 @@ export function CreateTaskDialog({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Create New Task</DialogTitle>
-                    <DialogDescription>Add a task to the project board.</DialogDescription>
+                    <DialogTitle>{task ? "Edit Task" : "Create New Task"}</DialogTitle>
+                    <DialogDescription>
+                        {task ? "Update task details." : "Add a task to the project board."}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
@@ -209,19 +223,6 @@ export function CreateTaskDialog({
                                             cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
                                             day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                                         }}
-                                        components={{
-                                            Head: () => (
-                                                <thead className="w-full">
-                                                    <tr className="flex w-full justify-around">
-                                                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                                                            <th key={day} className="w-8 text-[0.8rem] font-normal text-muted-foreground">
-                                                                {day}
-                                                            </th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                            )
-                                        }}
                                     />
                                 </PopoverContent>
                             </Popover>
@@ -232,7 +233,7 @@ export function CreateTaskDialog({
                         <Button variant="ghost" type="button" onClick={onClose}>Cancel</Button>
                         <Button type="submit" disabled={isLoading || !title.trim()}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create Task
+                            {task ? "Save Changes" : "Create Task"}
                         </Button>
                     </div>
                 </form>

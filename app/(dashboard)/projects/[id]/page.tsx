@@ -601,7 +601,11 @@ export default function ProjectDetailPage() {
                             </TabsContent>
 
                             <TabsContent value="tasks" className="mt-0 h-full">
-                                <TaskBoard projectId={project._id} />
+                                <TaskBoard
+                                    projectId={project._id}
+                                    project={project}
+                                    currentUser={session?.user}
+                                />
                             </TabsContent>
 
                             <TabsContent value="chat" className="mt-0">

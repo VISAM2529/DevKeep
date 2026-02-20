@@ -64,7 +64,7 @@ export async function GET(
 
         const tasks = await Task.find(query)
             .populate("assigneeId", "name email image")
-            .populate("creatorId", "name")
+            .populate("creatorId", "name image")
             .sort({ createdAt: -1 });
 
         return NextResponse.json(tasks);
