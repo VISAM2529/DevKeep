@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { Send, Loader2, Check, CheckCheck, Maximize2, Minimize2 } from "lucide-r
 import { getInitials } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
+import { useSocket } from "@/context/SocketProvider";
+import { useNotifications } from "@/components/providers/NotificationProvider";
 
 interface Message {
     _id: string;
@@ -23,6 +25,7 @@ interface Message {
         userId: { _id: string; name: string };
         readAt: string;
     }[];
+    meetingId?: string;
     createdAt: string;
 }
 
@@ -33,11 +36,10 @@ interface ChatInterfaceProps {
     className?: string; // Allow custom styling
 }
 
-import { useNotifications } from "@/components/providers/NotificationProvider";
-
 export function ChatInterface({ communityId, projectId, meetingId, className }: ChatInterfaceProps) {
     const { data: session } = useSession();
     const { refresh } = useNotifications();
+    const { socket, joinCommunityRoom, joinProjectRoom, leaveRoom } = useSocket();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -49,27 +51,31 @@ export function ChatInterface({ communityId, projectId, meetingId, className }: 
         ? `/api/projects/${projectId}/messages`
         : `/api/communities/${communityId}/messages`;
 
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         if (scrollRef.current) {
             const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
             if (scrollContainer) {
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
             }
         }
-    };
+    }, []);
 
-    const markAsRead = async () => {
+    const markAsRead = useCallback(async () => {
         try {
             await fetch(`${apiEndpoint}/read`, {
                 method: "POST",
             });
             refresh();
+
+            if (socket?.connected) {
+                socket.emit("chat:mark-read", { communityId, projectId });
+            }
         } catch (error) {
             console.error("Failed to mark messages as read", error);
         }
-    };
+    }, [apiEndpoint, refresh, socket, communityId, projectId]);
 
-    const fetchMessages = async () => {
+    const fetchMessages = useCallback(async () => {
         try {
             const url = meetingId
                 ? `${apiEndpoint}?meetingId=${meetingId}`
@@ -79,55 +85,98 @@ export function ChatInterface({ communityId, projectId, meetingId, className }: 
             if (res.ok) {
                 const data = await res.json();
                 setMessages(data);
-
-                // Mark as read whenever we fetch. 
                 markAsRead();
-
-                // Only scroll if we were already loading (initial load)
-                if (isLoading) {
-                    setTimeout(scrollToBottom, 100);
-                }
+                setTimeout(scrollToBottom, 100);
             }
         } catch (error) {
             console.error("Failed to fetch messages", error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [apiEndpoint, meetingId, markAsRead, scrollToBottom]);
 
     useEffect(() => {
         fetchMessages();
-        // Polling every 5 seconds for new messages
-        const interval = setInterval(fetchMessages, 5000);
-        return () => clearInterval(interval);
-    }, [communityId, projectId, meetingId]); // Depend on all
+
+        // ── Room Management ──────────────────────────────────────────────────
+        if (communityId) joinCommunityRoom(communityId);
+        if (projectId) joinProjectRoom(projectId);
+
+        // ── Socket Event Listeners ───────────────────────────────────────────
+        if (!socket) return;
+
+        const handleNewMessage = (message: Message) => {
+            // Filter by meetingId if applicable
+            if (meetingId && message.meetingId !== meetingId) return;
+
+            setMessages((prev) => {
+                // Prevent duplicates
+                if (prev.some(m => m._id === message._id)) return prev;
+                return [...prev, message];
+            });
+
+            // Mark as read if user is looking at the chat
+            if (document.visibilityState === 'visible') {
+                markAsRead();
+            }
+        };
+
+        socket.on("chat:new", handleNewMessage);
+
+        return () => {
+            socket.off("chat:new", handleNewMessage);
+            if (communityId) leaveRoom(`community-${communityId}`);
+            if (projectId) leaveRoom(`project-${projectId}`);
+        };
+    }, [communityId, projectId, meetingId, socket, joinCommunityRoom, joinProjectRoom, leaveRoom, fetchMessages, markAsRead]);
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages.length]);
-
+    }, [messages.length, scrollToBottom]);
 
     const sendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || isSending) return;
 
+        const content = newMessage.trim();
+        setNewMessage(""); // Clear early for better UX
         setIsSending(true);
-        try {
-            const res = await fetch(apiEndpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: newMessage, meetingId }),
-            });
 
-            if (res.ok) {
-                const message = await res.json();
-                setMessages((prev) => [...prev, message]);
-                setNewMessage("");
+        // Try socket emission first
+        if (socket?.connected) {
+            socket.emit("chat:send", {
+                communityId,
+                projectId,
+                meetingId,
+                content
+            }, (res: { success: boolean, message?: Message, error?: string }) => {
+                setIsSending(false);
+                if (!res.success) {
+                    console.error("Socket send failed:", res.error);
+                    // Fallback to REST? Or show error?
+                }
+            });
+        } else {
+            // FALLBACK TO REST API
+            try {
+                const res = await fetch(apiEndpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content, meetingId }),
+                });
+
+                if (res.ok) {
+                    const message = await res.json();
+                    setMessages((prev) => {
+                        if (prev.some(m => m._id === message._id)) return prev;
+                        return [...prev, message];
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to send message via REST", error);
+            } finally {
+                setIsSending(false);
             }
-        } catch (error) {
-            console.error("Failed to send message", error);
-        } finally {
-            setIsSending(false);
         }
     };
 
@@ -137,9 +186,14 @@ export function ChatInterface({ communityId, projectId, meetingId, className }: 
             : className || "h-[500px] md:h-[600px] relative"
             }`}>
             <div className="p-3 md:p-4 border-b border-border/40 bg-muted/20 flex items-center justify-between">
-                <h3 className="font-semibold text-xs md:text-sm flex items-center gap-2 text-foreground">
-                    {projectId ? "Project Discussion" : "Community Chat"}
-                </h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-xs md:text-sm flex items-center gap-2 text-foreground">
+                        {projectId ? "Project Discussion" : "Community Chat"}
+                    </h3>
+                    {!socket?.connected && (
+                        <span className="flex h-2 w-2 rounded-full bg-yellow-500 animate-pulse" title="Connecting real-time..." />
+                    )}
+                </div>
                 <Button
                     variant="ghost"
                     size="icon"
@@ -162,12 +216,12 @@ export function ChatInterface({ communityId, projectId, meetingId, className }: 
                         </div>
                     ) : (
                         messages.map((msg) => {
-                            const isMe = msg.senderId._id === session?.user?.id;
+                            const isMe = msg.senderId?._id === session?.user?.id;
 
                             // Check read status (excluding sender)
-                            const readers = msg.readBy?.filter((r: any) => r.userId && r.userId._id !== msg.senderId._id) || [];
+                            const readers = msg.readBy?.filter((r: any) => r.userId && (r.userId._id || r.userId) !== (msg.senderId?._id || msg.senderId)) || [];
                             const isSeen = readers.length > 0;
-                            const seenByNames = readers.map((r: any) => r.userId.name).join(", ");
+                            const seenByNames = readers.map((r: any) => r.userId?.name || "Someone").join(", ");
 
                             const isActive = (lastSeen?: string) => {
                                 if (!lastSeen) return false;
@@ -183,12 +237,12 @@ export function ChatInterface({ communityId, projectId, meetingId, className }: 
                                 >
                                     <div className="relative">
                                         <Avatar className="h-8 w-8 border border-border/40">
-                                            <AvatarImage src={msg.senderId.image} />
+                                            <AvatarImage src={msg.senderId?.image} />
                                             <AvatarFallback className="text-[10px]">
-                                                {getInitials(msg.senderId.name)}
+                                                {getInitials(msg.senderId?.name || "??")}
                                             </AvatarFallback>
                                         </Avatar>
-                                        {isActive(msg.senderId.lastSeen) && (
+                                        {isActive(msg.senderId?.lastSeen) && (
                                             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card pulse-dot shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
                                         )}
                                     </div>
@@ -198,7 +252,7 @@ export function ChatInterface({ communityId, projectId, meetingId, className }: 
                                     >
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-[10px] text-muted-foreground font-medium">
-                                                {msg.senderId.name}
+                                                {msg.senderId?.name || "Deleted User"}
                                             </span>
                                             <span className="text-[10px] text-muted-foreground/60">
                                                 {format(new Date(msg.createdAt), "HH:mm")}

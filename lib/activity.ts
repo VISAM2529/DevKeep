@@ -1,6 +1,7 @@
 import Activity from "@/models/Activity";
 import connectDB from "@/lib/mongodb";
 import mongoose from "mongoose";
+import { broadcastSocketActivity } from "@/lib/socket-server";
 
 export async function logActivity({
     projectId,
@@ -29,6 +30,17 @@ export async function logActivity({
             details
         });
         console.log(`✅ Activity logged successfully: ${activity._id}`);
+
+        // Broadcast to socket server
+        await broadcastSocketActivity({
+            projectId,
+            actorId: userId,
+            actorName: userName,
+            actionType: type,
+            action,
+            details
+        });
+
     } catch (error) {
         console.error("❌ Failed to log activity:", error);
     }

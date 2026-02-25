@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useSession } from "next-auth/react";
 import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
 import { showDesktopNotification, requestNotificationPermission } from "@/lib/notification";
+import { useSocket } from "@/context/SocketProvider";
 
 interface UnreadCounts {
     totalProjectsUnread: number;
@@ -24,6 +25,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
     const { data: session } = useSession();
     const { isHiddenMode } = useHiddenSpace();
+    const { socket } = useSocket();
     const [counts, setCounts] = useState<UnreadCounts>({
         totalProjectsUnread: 0,
         totalCommunitiesUnread: 0,
@@ -32,7 +34,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         communities: {}
     });
 
-    const prevCountsRef = useRef<UnreadCounts>(counts);
     const userInteractedRef = useRef(false);
 
     useEffect(() => {
@@ -52,6 +53,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         };
     }, []);
 
+    const playNotificationSound = useCallback(() => {
+        if (userInteractedRef.current) {
+            try {
+                const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+                audio.volume = 0.5;
+                audio.play().catch(() => { });
+            } catch (e) { }
+        }
+    }, []);
+
     const refresh = useCallback(async () => {
         if (!session?.user) return;
 
@@ -62,67 +73,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             });
             if (res.ok) {
                 const data: UnreadCounts = await res.json();
-
-                // Compare with previous counts to trigger notifications
-                const prev = prevCountsRef.current;
-
-                // 1. Check for new project messages or tasks
-                Object.keys(data.projects).forEach(projectId => {
-                    const current = data.projects[projectId];
-                    const previous = prev.projects[projectId] || { messages: 0, tasks: 0 };
-
-                    if (current.messages > previous.messages) {
-                        showDesktopNotification(`New Message: ${current.name}`, {
-                            body: "Someone sent a message in this project.",
-                            tag: `project-msg-${projectId}`
-                        });
-                    }
-
-                    if (current.tasks > previous.tasks) {
-                        showDesktopNotification(`Task Assigned: ${current.name}`, {
-                            body: "You have a new task assigned to you in this project.",
-                            tag: `project-task-${projectId}`
-                        });
-                    }
-                });
-
-                // 2. Check for new community messages
-                Object.keys(data.communities).forEach(communityId => {
-                    const current = data.communities[communityId];
-                    const previous = prev.communities[communityId] || { messages: 0 };
-
-                    if (current.messages > previous.messages) {
-                        showDesktopNotification(`New Community Message: ${current.name}`, {
-                            body: "There is a new message in your community chat.",
-                            tag: `community-msg-${communityId}`
-                        });
-                    }
-                });
-
-                // 3. Check for new general notifications
-                if (data.totalNotifications > prev.totalNotifications) {
-                    showDesktopNotification("DevKeep Update", {
-                        body: "You have a new activity notification.",
-                        tag: "general-notification"
-                    });
-
-                    // Only play audio if user has interacted with the document
-                    if (userInteractedRef.current) {
-                        try {
-                            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-                            audio.volume = 0.5;
-                            audio.play().catch(() => {
-                                // Silent fail if still blocked
-                            });
-                        } catch (e) {
-                            // Suppress console error if play fails due to auto-play policy
-                        }
-                    }
-                }
-
                 setCounts(data);
-                prevCountsRef.current = data;
-
                 // Send heartbeat pulse
                 fetch("/api/user/pulse", { method: "POST" }).catch(err => console.error("Pulse failed", err));
             }
@@ -134,11 +85,48 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     useEffect(() => {
         if (session?.user?.id) {
             refresh();
-            // Polling every 1 minute for updates
-            const interval = setInterval(refresh, 60000);
+            // Polling as a slow fallback (every 5 mins) if socket is connected,
+            // or normal polling (every 1 min) if socket is disconnected.
+            const intervalTime = socket?.connected ? 300000 : 60000;
+            const interval = setInterval(refresh, intervalTime);
             return () => clearInterval(interval);
         }
-    }, [session?.user?.id, refresh]);
+    }, [session?.user?.id, refresh, socket?.connected]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewNotification = (notification: any) => {
+            refresh();
+            showDesktopNotification(notification.title, {
+                body: notification.message,
+                tag: notification._id
+            });
+            playNotificationSound();
+        };
+
+        const handleNewActivity = (activity: any) => {
+            refresh();
+            // Optional: Show desktop notification for activities?
+        };
+
+        const handleNewChat = (message: any) => {
+            // Only refresh counts if we are not the sender
+            if (message.senderId._id !== session?.user?.id) {
+                refresh();
+            }
+        };
+
+        socket.on("notification:new", handleNewNotification);
+        socket.on("activity:new", handleNewActivity);
+        socket.on("chat:new", handleNewChat);
+
+        return () => {
+            socket.off("notification:new", handleNewNotification);
+            socket.off("activity:new", handleNewActivity);
+            socket.off("chat:new", handleNewChat);
+        };
+    }, [socket, refresh, playNotificationSound, session?.user?.id]);
 
     const requestPermission = async () => {
         return await requestNotificationPermission();

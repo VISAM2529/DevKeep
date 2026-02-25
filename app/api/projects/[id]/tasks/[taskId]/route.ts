@@ -93,8 +93,8 @@ export async function PUT(
 
         // Trigger Notification for Owner/Admin on status change
         if (statusChanged && session.user.id !== project.userId.toString()) {
-            const Notification = (await import("@/models/Notification")).default;
-            await Notification.create({
+            const { createNotification } = await import("@/lib/notification-server");
+            await createNotification({
                 recipientId: project.userId,
                 senderId: session.user.id,
                 type: "task_update",

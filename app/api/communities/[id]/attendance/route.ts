@@ -56,8 +56,8 @@ export async function POST(
 
             // Trigger Notification for Owner
             if (session.user.id !== community.ownerId.toString()) {
-                const Notification = (await import("@/models/Notification")).default;
-                await Notification.create({
+                const { createNotification } = await import("@/lib/notification-server");
+                await createNotification({
                     recipientId: community.ownerId,
                     senderId: session.user.id,
                     type: "community_event",
@@ -87,8 +87,8 @@ export async function POST(
 
             // Trigger Notification for Owner
             if (session.user.id !== community.ownerId.toString()) {
-                const Notification = (await import("@/models/Notification")).default;
-                await Notification.create({
+                const { createNotification } = await import("@/lib/notification-server");
+                await createNotification({
                     recipientId: community.ownerId,
                     senderId: session.user.id,
                     type: "community_event",
