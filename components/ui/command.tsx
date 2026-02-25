@@ -116,17 +116,33 @@ CommandSeparator.displayName = CommandPrimitive.Separator.displayName;
 
 const CommandItem = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Item>,
-    React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
-    <CommandPrimitive.Item
-        ref={ref}
-        className={cn(
-            "relative flex cursor-default select-none items-center rounded-lg px-2 py-2 text-sm font-bold outline-none aria-selected:bg-primary/20 aria-selected:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors",
-            className
-        )}
-        {...props}
-    />
-));
+    React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item> & { 
+        onSelect?: () => void
+    }
+>(({ className, onSelect, children, ...props }, ref) => {
+    const [isSelected, setIsSelected] = React.useState(false);
+
+    return (
+        <CommandPrimitive.Item
+            ref={ref}
+            className={cn(
+                "relative flex cursor-pointer select-none items-center rounded-lg px-2 py-2 text-sm font-bold outline-none aria-selected:bg-primary/20 aria-selected:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-primary/10 transition-colors",
+                className
+            )}
+            onSelect={onSelect as any}
+            onMouseDown={(e: React.MouseEvent) => {
+                // Trigger onSelect on mouse down (left button only)
+                if (e.button === 0 && onSelect) {
+                    e.preventDefault();
+                    onSelect();
+                }
+            }}
+            {...props}
+        >
+            {children}
+        </CommandPrimitive.Item>
+    );
+});
 
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 

@@ -53,12 +53,18 @@ export function CommandPalette({ trigger }: CommandPaletteProps) {
     }, []);
 
     const handleKeyDown = async (e: React.KeyboardEvent) => {
+        // Only process Enter key for hidden mode if search has content
         if (e.key === "Enter" && search.length >= 4) {
-            // Try to toggle hidden mode with the search term as password
-            const success = await toggleHiddenMode(search);
-            if (success) {
-                setOpen(false);
-                setSearch("");
+            // Check if we're currently selecting a command item
+            // If not, try to toggle hidden mode with the search term as password
+            const activeElement = document.activeElement as HTMLElement;
+            if (!activeElement?.hasAttribute("cmdk-item")) {
+                e.preventDefault();
+                const success = await toggleHiddenMode(search);
+                if (success) {
+                    setOpen(false);
+                    setSearch("");
+                }
             }
         }
     };
