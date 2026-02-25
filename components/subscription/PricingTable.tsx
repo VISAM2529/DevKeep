@@ -79,7 +79,7 @@ export function PricingTable({ currentPlan, subscriptionStatus }: PricingTablePr
                 },
             };
 
-            const rzp1 = new window.Razorpay(options);
+            const rzp1 = new (window as any).Razorpay(options);
             rzp1.on('payment.failed', function (response: any) {
                 toast.error(response.error.description || "Payment Failed");
             });
@@ -131,13 +131,8 @@ export function PricingTable({ currentPlan, subscriptionStatus }: PricingTablePr
                     const isPremium = plan.slug === "premium";
                     const isFree = plan.price === 0;
 
-                    // Note: Price conversion or just currency change as requested
-                    const price = billingCycle === "annual"
-                        ? (plan.price * 0.8) // Discounted monthly rate for internal calculation if needed
-                        : plan.price;
-
                     const displayPrice = billingCycle === "annual"
-                        ? Math.floor(plan.price * 0.8 * 12)
+                        ? plan.price * 12
                         : plan.price;
 
                     return (
@@ -152,7 +147,7 @@ export function PricingTable({ currentPlan, subscriptionStatus }: PricingTablePr
                             <CardHeader className="pt-10 px-8 pb-4 text-left">
                                 <span className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] mb-3 block">{plan.name}</span>
                                 <div className="flex items-baseline gap-2 mb-3">
-                                    <span className="text-5xl font-bold text-white tracking-tight">₹{displayPrice}</span>
+                                    <span className="text-5xl font-bold text-white tracking-tight">₹{displayPrice.toLocaleString('en-IN')}</span>
                                     <span className="text-zinc-500 text-sm font-medium">/{billingCycle === "annual" ? "year" : "month"}</span>
                                 </div>
                                 <p className="text-zinc-500 text-[13px] leading-relaxed font-medium">

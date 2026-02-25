@@ -114,6 +114,18 @@ export async function POST(req: NextRequest) {
 
         const note = await Note.create(noteData);
 
+        // Log Activity if project-specific
+        if (noteData.projectId) {
+            const { logActivity } = await import("@/lib/activity");
+            await logActivity({
+                projectId: noteData.projectId,
+                userId: session.user.id,
+                userName: session.user.name || "Member",
+                action: `created a new note: ${validatedData.title}`,
+                type: "note"
+            });
+        }
+
         return NextResponse.json({ note }, { status: 201 });
     } catch (error: any) {
         if (error instanceof z.ZodError) {

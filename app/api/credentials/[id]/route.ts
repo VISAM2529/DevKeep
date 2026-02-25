@@ -115,6 +115,18 @@ export async function PUT(
         Object.assign(credential, validatedData);
         await credential.save();
 
+        // Log Activity if project-specific
+        if (credential.projectId) {
+            const { logActivity } = await import("@/lib/activity");
+            await logActivity({
+                projectId: credential.projectId.toString(),
+                userId: session.user.id,
+                userName: session.user.name || "Member",
+                action: `updated the credential: ${credential.platform}`,
+                type: "credential"
+            });
+        }
+
         // Don't send encrypted password in response
         const response = {
             ...credential.toObject(),
@@ -173,7 +185,22 @@ export async function DELETE(
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
+        const projectId = credential.projectId;
+        const credentialPlatform = credential.platform;
+
         await Credential.findByIdAndDelete(id);
+
+        // Log Activity if project-specific
+        if (projectId) {
+            const { logActivity } = await import("@/lib/activity");
+            await logActivity({
+                projectId: projectId.toString(),
+                userId: session.user.id,
+                userName: session.user.name || "Member",
+                action: `deleted the credential: ${credentialPlatform}`,
+                type: "credential"
+            });
+        }
 
         return NextResponse.json(
             { message: "Credential deleted successfully" },

@@ -33,6 +33,24 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     });
 
     const prevCountsRef = useRef<UnreadCounts>(counts);
+    const userInteractedRef = useRef(false);
+
+    useEffect(() => {
+        const setInteracted = () => {
+            userInteractedRef.current = true;
+            document.removeEventListener('click', setInteracted);
+            document.removeEventListener('keydown', setInteracted);
+            document.removeEventListener('touchstart', setInteracted);
+        };
+        document.addEventListener('click', setInteracted);
+        document.addEventListener('keydown', setInteracted);
+        document.addEventListener('touchstart', setInteracted);
+        return () => {
+            document.removeEventListener('click', setInteracted);
+            document.removeEventListener('keydown', setInteracted);
+            document.removeEventListener('touchstart', setInteracted);
+        };
+    }, []);
 
     const refresh = useCallback(async () => {
         if (!session?.user) return;
@@ -88,12 +106,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         tag: "general-notification"
                     });
 
-                    try {
-                        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-                        audio.volume = 0.5;
-                        audio.play().catch(e => console.error("Audio play failed", e));
-                    } catch (e) {
-                        console.error("Audio creation failed", e);
+                    // Only play audio if user has interacted with the document
+                    if (userInteractedRef.current) {
+                        try {
+                            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+                            audio.volume = 0.5;
+                            audio.play().catch(() => {
+                                // Silent fail if still blocked
+                            });
+                        } catch (e) {
+                            // Suppress console error if play fails due to auto-play policy
+                        }
                     }
                 }
 

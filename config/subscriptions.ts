@@ -19,7 +19,7 @@ export const SUBSCRIPTION_PLANS = [
     {
         name: "Pro",
         slug: "pro",
-        price: 9,
+        price: 900,
         razorpayPlanId: "plan_RzRNaNrwUmkCzT", // Placeholder - User needs to replace
         features: [
             "Unlimited Projects",
@@ -37,7 +37,7 @@ export const SUBSCRIPTION_PLANS = [
     {
         name: "Premium",
         slug: "premium",
-        price: 29,
+        price: 2900,
         razorpayPlanId: "plan_RzROe7aMUyZp5L", // Placeholder - User needs to replace
         features: [
             "Unlimited Everything",

@@ -65,7 +65,15 @@ export function CommandPalette({ trigger }: CommandPaletteProps) {
 
     return (
         <>
-            <div onClick={() => setOpen(true)}>
+            <div
+                onClick={() => setOpen(true)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setOpen(true);
+                    }
+                }}
+            >
                 {trigger || (
                     <button
                         className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-input bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors w-full text-sm"
@@ -88,7 +96,7 @@ export function CommandPalette({ trigger }: CommandPaletteProps) {
                 />
                 <CommandList>
                     <CommandEmpty>No results found.</CommandEmpty>
-                    <CommandGroup heading="Suggestions">
+                    <CommandGroup heading="Navigation">
                         <CommandItem onSelect={() => runCommand(() => router.push("/dashboard"))}>
                             <LayoutDashboard className="mr-2 h-4 w-4" />
                             <span>Dashboard</span>
@@ -109,17 +117,17 @@ export function CommandPalette({ trigger }: CommandPaletteProps) {
                             <FileText className="mr-2 h-4 w-4" />
                             <span>Notes</span>
                         </CommandItem>
+                        <CommandItem onSelect={() => runCommand(() => router.push("/settings"))}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Settings</span>
+                            <CommandShortcut>⌘S</CommandShortcut>
+                        </CommandItem>
                     </CommandGroup>
                     <CommandSeparator />
                     <CommandGroup heading="Actions">
                         <CommandItem onSelect={() => runCommand(() => router.push("/projects/new"))}>
                             <Plus className="mr-2 h-4 w-4" />
                             <span>New Project</span>
-                        </CommandItem>
-                        <CommandItem onSelect={() => runCommand(() => router.push("/settings"))}>
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Settings</span>
-                            <CommandShortcut>⌘S</CommandShortcut>
                         </CommandItem>
                     </CommandGroup>
                 </CommandList>

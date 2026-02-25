@@ -137,18 +137,15 @@ export async function POST(
         await task.populate("assigneeId", "name email image");
 
         // Trigger Notification for Assignee
-        if (parsed.assigneeId && parsed.assigneeId !== session.user.id) {
-            const Notification = (await import("@/models/Notification")).default;
-            await Notification.create({
-                recipientId: parsed.assigneeId,
-                senderId: session.user.id,
-                type: "task_assigned",
-                title: "New Task Assigned",
-                message: `You have been assigned a new task: ${task.title}`,
-                link: `/projects/${id}`,
-                projectId: id,
-            });
-        }
+        // Log Activity
+        const { logActivity } = await import("@/lib/activity");
+        await logActivity({
+            projectId: id,
+            userId: session.user.id,
+            userName: session.user.name || "Member",
+            action: `created a new task: ${task.title}`,
+            type: "task"
+        });
 
         return NextResponse.json(task);
 

@@ -41,6 +41,7 @@ export async function GET(req: Request) {
         // 2. Pending Invitations
         const pendingInvitations = await Community.find({
             isHidden: isHiddenFilter,
+            ownerId: { $ne: session.user.id }, // Exclude communities owned by the user
             members: {
                 $elemMatch: {
                     userId: session.user.id,
@@ -80,6 +81,8 @@ export async function POST(req: Request) {
                 {
                     userId: session.user.id,
                     role: "admin",
+                    accepted: true,
+                    joinedAt: new Date(),
                 },
             ],
             isHidden: isHidden || false,

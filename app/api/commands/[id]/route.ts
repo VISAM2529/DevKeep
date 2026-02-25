@@ -103,6 +103,18 @@ export async function PUT(
         Object.assign(command, validatedData);
         await command.save();
 
+        // Log Activity if project-specific
+        if (command.projectId) {
+            const { logActivity } = await import("@/lib/activity");
+            await logActivity({
+                projectId: command.projectId.toString(),
+                userId: session.user.id,
+                userName: session.user.name || "Member",
+                action: `updated the command: ${command.title}`,
+                type: "command"
+            });
+        }
+
         return NextResponse.json({ command }, { status: 200 });
     } catch (error: any) {
         if (error instanceof z.ZodError) {
@@ -155,7 +167,22 @@ export async function DELETE(
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
+        const projectId = command.projectId;
+        const commandTitle = command.title;
+
         await Command.findByIdAndDelete(id);
+
+        // Log Activity if project-specific
+        if (projectId) {
+            const { logActivity } = await import("@/lib/activity");
+            await logActivity({
+                projectId: projectId.toString(),
+                userId: session.user.id,
+                userName: session.user.name || "Member",
+                action: `deleted the command: ${commandTitle}`,
+                type: "command"
+            });
+        }
 
         return NextResponse.json(
             { message: "Command deleted successfully" },

@@ -54,6 +54,10 @@ export async function POST(
         ) || community.ownerId.toString() === targetUser._id.toString();
 
         if (isAlreadyMember) {
+            // Skip invitation creation if invitedUserId === creatorId
+            if (targetUser._id.toString() === community.ownerId.toString()) {
+                return NextResponse.json({ message: "User is already the owner" }, { status: 200 });
+            }
             return NextResponse.json({ error: "User is already a member" }, { status: 400 });
         }
 

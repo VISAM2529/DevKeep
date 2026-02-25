@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
 
         // 3. Pending invitations (Still need explicit query as they aren't "accessible" yet)
         const pendingInvitations = await Project.find({
+            userId: { $ne: session.user.id }, // Exclude projects owned by the user
             "sharedWith": {
                 $elemMatch: {
                     email: userEmail,
@@ -131,6 +132,16 @@ export async function POST(req: NextRequest) {
         const project = await Project.create({
             ...validatedData,
             userId: session.user.id,
+        });
+
+        // Log Activity
+        const { logActivity } = await import("@/lib/activity");
+        await logActivity({
+            projectId: project._id.toString(),
+            userId: session.user.id,
+            userName: session.user.name || "Member",
+            action: `created the project: ${project.name}`,
+            type: "system"
         });
 
         return NextResponse.json({ project }, { status: 201 });

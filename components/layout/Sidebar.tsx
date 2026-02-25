@@ -76,38 +76,69 @@ export function Sidebar({ onClose, isCollapsed, onToggleCollapse }: SidebarProps
         )}>
             {/* Header */}
             <div className={cn(
-                "flex h-[72px] items-center px-4",
+                "flex h-[72px] items-center",
                 isCollapsed ? "justify-center" : "justify-between px-6"
             )}>
-                {!isCollapsed && (
-                    <div className="flex items-center gap-3 group">
-                        <div className={cn(
-                            "h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-500",
-                            isHiddenMode
-                                ? "bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20"
-                                : "bg-white/5 text-white/80 group-hover:bg-white/10"
-                        )}>
-                            {isHiddenMode ? <ShieldCheck className="h-5 w-5" /> : <Zap className="h-5 w-5 fill-current" />}
-                        </div>
-                        <span className={cn(
-                            "text-xl font-bold tracking-tight transition-colors duration-500",
-                            isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600" : "text-white/90"
-                        )}>
-                            {isHiddenMode ? "DevHide" : "DevKeep"}
-                        </span>
-                    </div>
-                )}
-
-                <div className="flex items-center gap-1">
-                    {!isCollapsed && <NotificationCenter />}
+                {isCollapsed ? (
                     <button
                         onClick={onToggleCollapse}
-                        className="p-2 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors"
-                        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                        className="group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300"
+                        title="Expand Sidebar"
                     >
-                        {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+                        {/* Logo Icon - Shown by default */}
+                        <div className={cn(
+                            "absolute inset-0 flex items-center justify-center transition-all duration-200 ease-in-out",
+                            "group-hover:opacity-0 group-hover:scale-90 opacity-100 scale-100"
+                        )}>
+                            <div className={cn(
+                                "h-8 w-8 rounded-lg flex items-center justify-center",
+                                isHiddenMode ? "bg-purple-500/10 text-purple-400" : "bg-white/5 text-white/80"
+                            )}>
+                                {isHiddenMode ? <ShieldCheck className="h-5 w-5" /> : <Zap className="h-5 w-5 fill-current" />}
+                            </div>
+                        </div>
+
+                        {/* Expand Icon - Shown on hover */}
+                        <div className={cn(
+                            "absolute inset-0 flex items-center justify-center transition-all duration-200 ease-in-out",
+                            "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100"
+                        )}>
+                            <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-white/5 text-white">
+                                <PanelLeftOpen className="h-5 w-5" />
+                            </div>
+                        </div>
                     </button>
-                </div>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-3 group">
+                            <div className={cn(
+                                "h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-500",
+                                isHiddenMode
+                                    ? "bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20"
+                                    : "bg-white/5 text-white/80 group-hover:bg-white/10"
+                            )}>
+                                {isHiddenMode ? <ShieldCheck className="h-5 w-5" /> : <Zap className="h-5 w-5 fill-current" />}
+                            </div>
+                            <span className={cn(
+                                "text-xl font-bold tracking-tight transition-colors duration-500",
+                                isHiddenMode ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600" : "text-white/90"
+                            )}>
+                                {isHiddenMode ? "DevHide" : "DevKeep"}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                            <NotificationCenter />
+                            <button
+                                onClick={onToggleCollapse}
+                                className="p-2 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors"
+                                title="Collapse Sidebar"
+                            >
+                                <PanelLeftClose className="h-5 w-5" />
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Create Button */}

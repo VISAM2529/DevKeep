@@ -100,6 +100,18 @@ export async function POST(req: NextRequest) {
             userId: session.user.id,
         });
 
+        // Log Activity if project-specific
+        if (validatedData.projectId) {
+            const { logActivity } = await import("@/lib/activity");
+            await logActivity({
+                projectId: validatedData.projectId,
+                userId: session.user.id,
+                userName: session.user.name || "Member",
+                action: `added a new credential: ${validatedData.platform}`,
+                type: "credential"
+            });
+        }
+
         // Don't send encrypted password in response
         const response = {
             ...credential.toObject(),

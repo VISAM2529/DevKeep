@@ -27,11 +27,13 @@ import {
     Paperclip,
     Loader2,
     Video,
+    Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { ProjectActivity } from "@/components/projects/ProjectActivity";
 import {
     Dialog,
     DialogContent,
@@ -433,6 +435,10 @@ export default function ProjectDetailPage() {
                                         <Users className="h-3.5 w-3.5" />
                                         Discussion
                                     </TabsTrigger>
+                                    <TabsTrigger value="activity" className="gap-2 py-1.5 md:py-2 text-xs md:text-sm px-3 md:px-4 whitespace-nowrap shrink-0">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        Activity
+                                    </TabsTrigger>
                                 </TabsList>
 
                                 <div className="flex items-center gap-2">
@@ -610,6 +616,10 @@ export default function ProjectDetailPage() {
 
                             <TabsContent value="chat" className="mt-0">
                                 <ChatInterface projectId={project._id} />
+                            </TabsContent>
+
+                            <TabsContent value="activity" className="mt-0">
+                                <ProjectActivity projectId={project._id} />
                             </TabsContent>
                         </Tabs>
                     </>

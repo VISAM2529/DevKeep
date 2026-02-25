@@ -44,9 +44,9 @@ export async function POST(
             return NextResponse.json({ error: "User with this email not found" }, { status: 404 });
         }
 
-        // 3. Prevent self-sharing
+        // 3. Prevent self-sharing (Skip invitation creation if invitedUserId === creatorId)
         if (targetUser.email === session.user.email) {
-            return NextResponse.json({ error: "You are already the owner of this project" }, { status: 400 });
+            return NextResponse.json({ message: "You are already the owner of this project" }, { status: 200 });
         }
 
         // 4. Check if already shared
@@ -66,6 +66,16 @@ export async function POST(
 
         project.markModified("sharedWith");
         await project.save();
+
+        // Log Activity
+        const { logActivity } = await import("@/lib/activity");
+        await logActivity({
+            projectId: id,
+            userId: session.user.id,
+            userName: session.user.name || "Member",
+            action: `invited ${email} as ${role}`,
+            type: "member"
+        });
 
         return NextResponse.json({ message: "Project shared successfully", sharedWith: project.sharedWith }, { status: 200 });
     } catch (error: any) {
@@ -114,6 +124,16 @@ export async function DELETE(
         if (!project.sharedWith) project.sharedWith = [];
         project.sharedWith = project.sharedWith.filter(s => s.email !== email.toLowerCase());
         await project.save();
+
+        // Log Activity
+        const { logActivity } = await import("@/lib/activity");
+        await logActivity({
+            projectId: id,
+            userId: session.user.id,
+            userName: session.user.name || "Member",
+            action: `removed collaborator: ${email}`,
+            type: "member"
+        });
 
         return NextResponse.json({ message: "Collaborator removed", sharedWith: project.sharedWith }, { status: 200 });
     } catch (error: any) {

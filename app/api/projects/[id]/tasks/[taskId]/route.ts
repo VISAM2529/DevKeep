@@ -105,6 +105,16 @@ export async function PUT(
             });
         }
 
+        // Log Activity
+        const { logActivity } = await import("@/lib/activity");
+        await logActivity({
+            projectId: id,
+            userId: session.user.id,
+            userName: session.user.name || "Member",
+            action: parsed.status ? `updated task status: ${task.title} to ${task.status}` : `updated task: ${task.title}`,
+            type: "task"
+        });
+
         return NextResponse.json(task);
 
     } catch (error: any) {
