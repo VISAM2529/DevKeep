@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { Server } from "socket.io";
 import config from "../config";
 import { sendNotification, NotificationPayload } from "../events/notification";
@@ -40,7 +40,7 @@ export function createBroadcastRouter(io: Server): Router {
     const router = Router();
 
     // ── Shared-secret guard middleware ────────────────────────────────────────
-    router.use((req: Request, res: Response, next) => {
+    router.use((req: Request, res: Response, next: NextFunction) => {
         const key = req.headers["x-internal-key"];
         if (!key || key !== config.internalSocketKey) {
             res.status(401).json({ error: "Unauthorized" });
