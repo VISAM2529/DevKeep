@@ -32,7 +32,7 @@ async function main() {
     );
 
     // ── 3. Health check (required for Render) ─────────────────────────────────
-    app.get("/health", (_req, res) => {
+    app.get("/health", (_req: express.Request, res: express.Response) => {
         res.json({ status: "ok", uptime: process.uptime() });
     });
 
@@ -44,7 +44,7 @@ async function main() {
     app.use("/internal", createBroadcastRouter(io));
 
     // ── 6. 404 fallback ───────────────────────────────────────────────────────
-    app.use((_req, res) => {
+    app.use((_req: express.Request, res: express.Response) => {
         res.status(404).json({ error: "Not found" });
     });
 
