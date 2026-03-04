@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Community from "@/models/Community";
 import User from "@/models/User";
+import { checkLimit } from "@/lib/subscription";
 import { z } from "zod";
 
 const memberSchema = z.object({
@@ -46,6 +47,15 @@ export async function POST(
         const targetUser = await User.findOne({ email: email.toLowerCase() });
         if (!targetUser) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+
+        // 3.1 ensure target hasn't exceeded their community limit
+        const recipientCheck = await checkLimit(targetUser._id.toString(), "communities");
+        if (!recipientCheck.allowed) {
+            return NextResponse.json(
+                { error: recipientCheck.reason || "User has reached their community limit" },
+                { status: 403 }
+            );
         }
 
         // 4. Check if already a member

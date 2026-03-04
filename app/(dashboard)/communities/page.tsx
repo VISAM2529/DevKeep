@@ -18,6 +18,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useHiddenSpace } from "@/components/providers/HiddenSpaceProvider";
+import { useSession } from "next-auth/react";
 
 import { CommunityInvitationCard } from "@/components/communities/CommunityInvitationCard";
 
@@ -34,29 +35,49 @@ export default function CommunitiesPage() {
     const fetchCommunities = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/communities?hidden=${isHiddenMode}`);
-            const data = await res.json();
-            if (res.ok) {
-                // Handle new structure { communities: [], pendingInvitations: [] }
-                // fallback for legacy response which might be array
-                if (Array.isArray(data)) {
-                    setCommunities(data);
-                    setPendingInvitations([]);
-                } else {
-                    setCommunities(data.communities || []);
-                    setPendingInvitations(data.pendingInvitations || []);
+            const res = await fetch(`/api/communities?hidden=${isHiddenMode}`, {
+                credentials: 'include',
+                cache: 'no-store',
+            });
+
+            if (!res.ok) {
+                let msg = 'Failed to load communities';
+                try {
+                    const errData = await res.json();
+                    msg = errData.error || msg;
+                } catch {
+                    // ignore parse errors
                 }
+                toast({ variant: 'destructive', title: 'Error', description: msg });
+                setCommunities([]);
+                setPendingInvitations([]);
+                return;
+            }
+
+            const data = await res.json();
+            // Handle new structure { communities: [], pendingInvitations: [] }
+            // fallback for legacy response which might be array
+            if (Array.isArray(data)) {
+                setCommunities(data);
+                setPendingInvitations([]);
+            } else {
+                setCommunities(data.communities || []);
+                setPendingInvitations(data.pendingInvitations || []);
             }
         } catch (error) {
             console.error(error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load communities' });
         } finally {
             setIsLoading(false);
         }
     };
 
+    const { data: session } = useSession();
+
     useEffect(() => {
+        if (!session?.user?.id) return;
         fetchCommunities();
-    }, [isHiddenMode]);
+    }, [isHiddenMode, session?.user?.id]);
 
     const filteredCommunities = communities.filter((community) =>
         community.name.toLowerCase().includes(searchTerm.toLowerCase())

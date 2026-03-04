@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import Community from "@/models/Community";
+import { checkLimit } from "@/lib/subscription";
 
 // POST /api/communities/[id]/accept - Accept invitation
 export async function POST(
@@ -30,6 +31,17 @@ export async function POST(
 
         if (memberIndex === -1) {
             return NextResponse.json({ error: "No pending invitation found" }, { status: 404 });
+        }
+
+        // Before accepting, ensure user hasn't hit their community limit
+        const limitCheck = await checkLimit(session.user.id, "communities");
+        if (!limitCheck.allowed) {
+            return NextResponse.json(
+                {
+                    error: limitCheck.reason || "Community limit reached",
+                },
+                { status: 403 }
+            );
         }
 
         // Update accepted status

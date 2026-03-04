@@ -15,6 +15,8 @@ export interface IProject extends Document {
     isHidden: boolean;
     logo?: string;
     banner?: string;
+    
+
     sharedWith: {
         email: string;
         role: "Collaborator" | "Admin" | "Project Lead";
@@ -87,6 +89,7 @@ const ProjectSchema = new Schema<IProject>(
         banner: {
             type: String,
         },
+       
         sharedWith: [
             {
                 email: { type: String, required: true, lowercase: true },

@@ -62,7 +62,30 @@ export function CommunityForm({ initialData, onSuccess }: CommunityFormProps) {
                 body: JSON.stringify({ ...data, isHidden: isHiddenMode }),
             });
 
-            if (!res.ok) throw new Error("Failed to save community");
+            if (!res.ok) {
+                let errMsg = "Failed to save community";
+                try {
+                    const errData = await res.json();
+                    if (errData && errData.error) {
+                        errMsg = errData.error;
+                    }
+                } catch {
+                    // ignore parse
+                }
+
+                if (res.status === 403) {
+                    toast({
+                        variant: "destructive",
+                        title: "Community Limit Reached",
+                        description:
+                            errMsg ||
+                            "You've reached your community limit. Please upgrade your plan to create more.",
+                    });
+                    return;
+                }
+
+                throw new Error(errMsg);
+            }
 
             toast({
                 title: initialData?._id ? "Community Updated" : "Community Created",

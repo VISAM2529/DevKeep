@@ -19,36 +19,36 @@ export const SUBSCRIPTION_PLANS = [
     {
         name: "Pro",
         slug: "pro",
-        price: 900,
+        price: 1499,
         razorpayPlanId: "plan_RzRNaNrwUmkCzT", // Placeholder - User needs to replace
         features: [
-            "Unlimited Projects",
-            "5 Communities",
+            "6 Projects",
+            "3 Communities",
             "Advanced Analytics",
             "Priority Support",
             "7-Day Free Trial",
         ],
         limits: {
-            projects: -1, // Unlimited
-            communities: 5,
+            projects: 6, // Unlimited
+            communities: 3,
         },
         trialDays: 7,
     },
     {
         name: "Premium",
         slug: "premium",
-        price: 2900,
+        price: 2999,
         razorpayPlanId: "plan_RzROe7aMUyZp5L", // Placeholder - User needs to replace
         features: [
-            "Unlimited Everything",
-            "Unlimited Communities",
-            "Custom Integrations",
-            "Dedicated Manager",
+            "12 Projects",
+            "6 Communities",
+            "Advanced Analytics",
+            "Priority Support",
             "14-Day Free Trial",
         ],
         limits: {
-            projects: -1, // Unlimited
-            communities: -1, // Unlimited
+            projects: 12, 
+            communities: 6, 
         },
         trialDays: 14,
     },

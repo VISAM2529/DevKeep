@@ -23,29 +23,97 @@ export default function ProjectsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [view, setView] = useState<"grid" | "table">("grid");
 
-    const fetchProjects = async () => {
-        setLoading(true); // Moved setLoading to the start
-        try {
-            const res = await fetch(`/api/projects?hidden=${isHiddenMode}`); // Added hidden query param
-            if (!res.ok) throw new Error("Failed to fetch projects");
-            const data: any = await res.json(); // Changed type to any for now, assuming Project[] is correct
-            setProjects(data.projects || []); // Original line, keeping it for now based on context
-            setPendingInvitations(data.pendingInvitations || []); // Original line, keeping it for now based on context
-        } catch (error) {
-            console.error(error); // Added console.error
-            toast({
-                title: "Error",
-                description: "Failed to load projects",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
+    // const fetchProjects = async () => {
+    //     setLoading(true); // Moved setLoading to the start
+    //     try {
+    //         const res = await fetch(`/api/projects?hidden=${isHiddenMode}`); // Added hidden query param
+    //         if (!res.ok) throw new Error("Failed to fetch projects");
+    //         const data: any = await res.json(); // Changed type to any for now, assuming Project[] is correct
+    //         setProjects(data.projects || []); // Original line, keeping it for now based on context
+    //         setPendingInvitations(data.pendingInvitations || []); // Original line, keeping it for now based on context
+    //     } catch (error) {
+    //         console.error(error); // Added console.error
+    //         toast({
+    //             title: "Error",
+    //             description: "Failed to load projects",
+    //             variant: "destructive",
+    //         });
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+    // app/(dashboard)/projects/page.tsx
+   const fetchProjects = async () => {
+    setLoading(true);
+    try {
+        const res = await fetch(`/api/projects?hidden=${isHiddenMode}`, {
+            credentials: 'include',
+            cache: 'no-store',
+        });
+
+        if (!res.ok) {
+            let errorMessage = "Failed to load projects";
+
+            try {
+                const errData = await res.json();
+                errorMessage = errData.error || errorMessage;
+
+                // ── Handle limit reached (403) gracefully ────────────────
+                if (res.status === 403) {
+                    toast({
+                        title: "Project Limit Reached",
+                        description: errorMessage || "You've reached the maximum number of projects for your plan.",
+                        variant: "default", // or "warning"
+                        duration: 8000,
+                        action: (
+                            <Button variant="outline" size="sm" asChild className="ml-2">
+                                <Link href="/pricing">Upgrade Plan</Link>
+                            </Button>
+                        ),
+                    });
+
+                    // Allow page to render normally (empty or previous state)
+                    setProjects([]);
+                    setPendingInvitations([]);
+                    setLoading(false);
+                    return; // ← Exit here — do NOT continue to throw
+                }
+
+                // Other non-403 errors (401, 500, etc.)
+                console.warn("Projects API error:", { status: res.status, message: errorMessage });
+            } catch (jsonErr) {
+                console.warn("Could not parse error response:", jsonErr);
+            }
+
+            // Only throw for unexpected / non-limit errors
+            throw new Error(errorMessage);
         }
-    };
+
+        // Success
+        const data = await res.json();
+        setProjects(data.projects || []);
+        setPendingInvitations(data.pendingInvitations || []);
+    } catch (error) {
+        console.error("fetchProjects error:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load projects. Please try again or sign in.",
+        });
+    } finally {
+        setLoading(false);
+    }
+};
 
     useEffect(() => {
+        // only attempt to fetch once we know the user is authenticated
+        if (!session?.user?.id) {
+            return;
+        }
+
         fetchProjects();
-    }, [isHiddenMode]); // Added isHiddenMode to dependency array
+    }, [isHiddenMode, session?.user?.id]); // Added session id to dependency array
 
     const handleDelete = async (id: string) => {
         try {

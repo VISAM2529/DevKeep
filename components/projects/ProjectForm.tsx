@@ -130,7 +130,30 @@ export function ProjectForm({ initialData, communityId, onSuccess }: ProjectForm
                 body: JSON.stringify({ ...values, logo: logoUrl, communityId, isHidden: isHiddenMode }),
             });
 
-            if (!res.ok) throw new Error("Failed to save project");
+            if (!res.ok) {
+                let errMsg = "Failed to save project";
+                try {
+                    const errData = await res.json();
+                    if (errData && errData.error) {
+                        errMsg = errData.error;
+                    }
+                } catch {
+                    // ignore parse errors
+                }
+
+                if (res.status === 403) {
+                    toast({
+                        variant: "destructive",
+                        title: "Project Limit Reached",
+                        description:
+                            errMsg ||
+                            "You've reached your project limit. Please upgrade your plan to create more.",
+                    });
+                    return;
+                }
+
+                throw new Error(errMsg);
+            }
 
             toast({
                 title: initialData?._id ? "Project updated" : "Project created",

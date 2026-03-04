@@ -39,7 +39,7 @@ const CommunitySchema = new Schema<ICommunity>(
         members: [
             {
                 userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-                role: { type: String, enum: ["admin", "member"], default: "member" },
+                role: { type: String, enum: ["admin","moderator", "member"], default: "member" },
                 joinedAt: { type: Date, default: Date.now },
                 accepted: { type: Boolean, default: false },
             },
