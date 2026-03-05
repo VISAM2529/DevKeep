@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import VerificationToken from "@/models/VerificationToken";
+import { sendVerificationEmail } from "@/lib/mailer";
 import { z } from "zod";
+import crypto from "crypto";
 
 const signupSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -19,7 +22,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         // Check if user already exists
-        const existingUser = await User.findOne({ email: validatedData.email });
+        const existingUser = await User.findOne({ email: validatedData.email.toLowerCase() });
 
         if (existingUser) {
             return NextResponse.json(
@@ -28,22 +31,45 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Create new user (password will be hashed by pre-save hook)
+        // Create new user with emailVerified = false
+        // Password will be hashed by mongoose pre-save hook
         const user = await User.create({
             name: validatedData.name,
-            email: validatedData.email,
+            email: validatedData.email.toLowerCase(),
             password: validatedData.password,
             provider: "credentials",
+            emailVerified: null, // Not verified yet
         });
+
+        // Generate a secure raw token
+        const rawToken = crypto.randomBytes(32).toString("hex");
+
+        // Hash the token before storing
+        const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+        // Store hashed token with 15-minute expiry
+        await VerificationToken.create({
+            userId: user._id,
+            tokenHash,
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+        });
+
+        // Send verification email asynchronously (non-blocking)
+        console.log(`[MAILER] Attempting to send verification email to: ${user.email}`);
+
+        sendVerificationEmail(user.email, user.name, rawToken)
+            .then(() => {
+                console.log(`[MAILER] SUCCESS: Verification email sent to ${user.email}`);
+            })
+            .catch((err) => {
+                console.error("[MAILER] ERROR: Failed to send email:", err);
+            });
 
         return NextResponse.json(
             {
-                message: "User created successfully",
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                },
+                message: "Account created. Please verify your email.",
+                email: user.email,
+                requiresVerification: true,
             },
             { status: 201 }
         );

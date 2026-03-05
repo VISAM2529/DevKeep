@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Code2, Loader2, Mail, Lock, ChevronLeft } from "lucide-react";
+import { Code2, Loader2, Mail, Lock, ChevronLeft, CheckCircle2 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const justVerified = searchParams.get("verified") === "1";
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -32,6 +34,12 @@ export default function LoginPage() {
             });
 
             if (result?.error) {
+                // Check if email not verified error
+                if (result.error.startsWith("EMAIL_NOT_VERIFIED:")) {
+                    const email = result.error.split(":")[1];
+                    router.push(`/check-inbox?email=${encodeURIComponent(email)}`);
+                    return;
+                }
                 toast({
                     variant: "destructive",
                     title: "Access Denied",
@@ -87,6 +95,18 @@ export default function LoginPage() {
                 <Card className="border-white/10 bg-card/90 shadow-2xl relative overflow-hidden">
                     {/* Security Pattern Overlay */}
                     <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
+
+                    {/* Email verified success banner */}
+                    {justVerified && (
+                        <div className="relative z-10 mx-4 mt-4 flex items-center gap-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-3">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                            <div>
+                                <p className="text-sm font-semibold text-emerald-400">Email Verified!</p>
+                                <p className="text-xs text-emerald-400/70">Your account is activated. Sign in below.</p>
+                            </div>
+                        </div>
+                    )}
+
                     <CardHeader className="space-y-4 text-center pb-8">
                         <div className="flex justify-center">
                             <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-xl ring-1 ring-white/20">
@@ -192,5 +212,17 @@ export default function LoginPage() {
                 </Card>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }

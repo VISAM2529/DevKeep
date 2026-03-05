@@ -43,23 +43,8 @@ export default function SignupPage() {
                 return;
             }
 
-            toast({
-                title: "Account Provisioned",
-                description: "Your workspace is ready. Initializing session...",
-            });
-
-            // Auto sign in after successful registration
-            const result = await signIn("credentials", {
-                email: formData.email,
-                password: formData.password,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                router.push("/login");
-            } else {
-                router.push("/dashboard");
-            }
+            // Redirect to check inbox page
+            router.push(`/check-inbox?email=${encodeURIComponent(formData.email)}`);
         } catch (error) {
             toast({
                 variant: "destructive",

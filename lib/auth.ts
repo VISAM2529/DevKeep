@@ -115,6 +115,11 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Invalid email or password");
                 }
 
+                // Block login if email is not verified for credentials users
+                if (user.provider === "credentials" && !user.emailVerified) {
+                    throw new Error("EMAIL_NOT_VERIFIED:" + user.email);
+                }
+
                 return {
                     id: user._id.toString(),
                     email: user.email,
